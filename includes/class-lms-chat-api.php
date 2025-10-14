@@ -1758,9 +1758,59 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
 
       do_action('lms_chat_thread_message_deleted', $message_id, $message->parent_message_id, $channel_id);
 
+      // スレッドメッセージが全て削除されたか確認し、親メッセージも削除
+      $parent_message_id = $message->parent_message_id;
+      $parent_deleted = false;
+      
+      $remaining_thread_messages = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}lms_chat_thread_messages 
+         WHERE parent_message_id = %d 
+         AND (deleted_at IS NULL OR deleted_at = '0000-00-00 00:00:00')",
+        $parent_message_id
+      ));
+      
+      if (defined('WP_DEBUG') && WP_DEBUG) {
+        error_log(sprintf(
+          '[Thread Delete Debug - PHP] 親メッセージID=%d の残存スレッドメッセージ数: %d件',
+          $parent_message_id,
+          $remaining_thread_messages
+        ));
+      }
+      
+      if ($remaining_thread_messages == 0) {
+        // 親メッセージを削除
+        $result = $wpdb->update(
+          $wpdb->prefix . 'lms_chat_messages',
+          array('deleted_at' => current_time('mysql')),
+          array('id' => $parent_message_id),
+          array('%s'),
+          array('%d')
+        );
+        
+        if ($result > 0) {
+          $parent_deleted = true;
+          
+          if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+              '[Thread Delete Debug - PHP] ✅ 親メッセージ削除成功: parent_id=%d',
+              $parent_message_id
+            ));
+          }
+          
+          // 親メッセージ削除イベントを発火
+          do_action('lms_chat_message_deleted', $parent_message_id, $channel_id, null);
+          
+          // 親メッセージのキャッシュをクリア
+          for ($page = 1; $page <= 10; $page++) {
+            $cache_key = "channel_messages_{$channel_id}_p{$page}";
+            @wp_cache_delete($cache_key, 'lms_chat_messages');
+          }
+          @wp_cache_delete("message_{$parent_message_id}", 'lms_chat_messages');
+        }
+      }
+
       // スレッドメッセージキャッシュをクリア（全ページ）
       try {
-        $parent_message_id = $message->parent_message_id;
         for ($page = 1; $page <= 10; $page++) {
           $cache_key = "thread_messages_{$parent_message_id}_p{$page}";
           @wp_cache_delete($cache_key, 'lms_thread_messages');
@@ -1773,7 +1823,8 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
         'message_id' => $message_id,
         'parent_id' => $message->parent_message_id,
         'thread_parent_id' => $message->parent_message_id,
-        'deleted' => true
+        'deleted' => true,
+        'parent_deleted' => $parent_deleted
       ]);
 
     } catch (Exception $e) {

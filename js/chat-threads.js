@@ -5921,6 +5921,27 @@
 								);
 							}
 						});
+						
+						// 親メッセージが削除された場合、メインチャットからも削除
+						if (response.data && response.data.parent_deleted) {
+							const parentId = response.data.parent_id || response.data.thread_parent_id;
+							
+							if (window.lmsDebugMode) {
+								console.log('[Thread Delete Debug - JS] 親メッセージ削除: parent_id=' + parentId);
+							}
+							
+							if (parentId) {
+								const $parentMessage = $(`.chat-message[data-message-id="${parentId}"]`);
+								if ($parentMessage.length > 0) {
+									if (window.lmsDebugMode) {
+										console.log('[Thread Delete Debug - JS] メインチャットから親メッセージを削除');
+									}
+									$parentMessage.fadeOut(300, function() {
+										$(this).remove();
+									});
+								}
+							}
+						}
 					} else {
 						// 削除失敗時はフラグをクリア
 						$message.removeClass('deleting').data('deleting', false);

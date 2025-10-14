@@ -107,7 +107,14 @@
       "Bash(git config:*)",
       "Bash(git init:*)",
       "Bash(git branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(brew install:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git push:*)",
+      "Bash(then $LOCAL_PHP_BIN -l includes/class-lms-chat-api.php)",
+      "Bash(else php -l includes/class-lms-chat-api.php)"
     ],
     "deny": [],
     "ask": []
