@@ -4261,6 +4261,11 @@
 		}
 	};
 	const scrollToBottom = (delay = 0, force = false, disableAutoScrollAfter = false) => {
+		// スレッドモーダルが開いている間はメインチャットをスクロールしない
+		if ($('.thread-panel').hasClass('open') || (window.LMSChat?.state?.currentThread)) {
+			return;
+		}
+		
 		if (force) {
 			const $messageContainer = $('#chat-messages');
 			if (!$messageContainer.length) return;
