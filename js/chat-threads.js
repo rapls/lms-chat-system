@@ -957,6 +957,7 @@
 			if (!$message.length) {
 				return;
 			}
+			// スレッド情報を更新（1回のみ、遅延なし）
 			if (
 				window.LMSChat.messages &&
 				typeof window.LMSChat.messages.updateThreadInfo === 'function'
@@ -964,18 +965,6 @@
 				window.LMSChat.messages.updateThreadInfo(messageId);
 			}
 			refreshThreadInfo(messageId);
-			setTimeout(() => {
-				if (
-					window.LMSChat.messages &&
-					typeof window.LMSChat.messages.updateThreadInfo === 'function'
-				) {
-					window.LMSChat.messages.updateThreadInfo(messageId);
-				}
-				refreshThreadInfo(messageId);
-			}, 120);
-			setTimeout(() => {
-				refreshThreadInfo(messageId);
-			}, 1000);
 			const readStatusPromise = new Promise((resolve) => {
 				const timeoutId = setTimeout(() => {
 					resolve({ success: false, data: { unread_messages: [] } });
@@ -5910,7 +5899,10 @@
 				},
 				success: function (response) {
 					if (response.success) {
-						$message.fadeOut(300, function () {
+						// 即座にopacity=0.5にして反応性を向上
+						$message.css('opacity', '0.5');
+						
+						$message.fadeOut(150, function () {
 							$(this).remove();
 
 							// 残りメッセージ数をチェック
