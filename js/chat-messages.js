@@ -7792,6 +7792,9 @@
 			cache: false,
 		})
 			.done((response) => {
+				// メッセージ追加前にローダーを即座に削除（途中に残るのを防ぐ）
+				$loader.remove();
+				
 				if (response.success && response.data && Array.isArray(response.data.messages)) {
 					const messages = response.data.messages;
 
@@ -7846,10 +7849,12 @@
 					window.LMSChat.state.isInfinityScrollLoading = false;
 				}
 
-				// ローダーを確実に削除（フェードアウト完了後）
-				$loader.fadeOut(200, function() {
-					$(this).remove();
-				});
+				// ローダーが残っている場合のみ削除（doneで既に削除されている場合がある）
+				if ($loader && $loader.length > 0 && $loader.parent().length > 0) {
+					$loader.fadeOut(200, function() {
+						$(this).remove();
+					});
+				}
 			});
 	};
 
@@ -7907,6 +7912,9 @@
 			cache: false,
 		})
 			.done((response) => {
+				// メッセージ追加前にローダーを即座に削除（途中に残るのを防ぐ）
+				$loader.remove();
+				
 				if (response.success && response.data && Array.isArray(response.data.messages)) {
 					const messages = response.data.messages;
 
@@ -7936,10 +7944,12 @@
 					window.LMSChat.state.isInfinityScrollLoading = false;
 				}
 
-				// ローダーを確実に削除（フェードアウト完了後）
-				$loader.fadeOut(200, function() {
-					$(this).remove();
-				});
+				// ローダーが残っている場合のみ削除（doneで既に削除されている場合がある）
+				if ($loader && $loader.length > 0 && $loader.parent().length > 0) {
+					$loader.fadeOut(200, function() {
+						$(this).remove();
+					});
+				}
 			});
 	};
 
