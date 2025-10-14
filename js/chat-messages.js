@@ -3682,49 +3682,6 @@
 			}
 		} catch (error) {}
 	};
-	const loadNewerMessages = async () => {
-		if (state.isLoading || !state.currentChannel) return;
-		state.isLoading = true;
-		try {
-			if (!state.newerMessagesPage) {
-				state.newerMessagesPage = 1;
-			}
-			state.newerMessagesPage++;
-			const response = await $.ajax({
-				url: window.lmsChat.ajaxUrl,
-				type: 'GET',
-				data: {
-					action: 'lms_get_messages',
-					channel_id: state.currentChannel,
-					page: state.newerMessagesPage,
-					nonce: window.lmsChat.nonce,
-				},
-				timeout: 15000,
-			});
-			if (response.success && response.data && response.data.messages) {
-				if (response.data.messages.length > 0) {
-					const $messageContainer = $('#chat-messages');
-					const scrollHeight = $messageContainer.prop('scrollHeight');
-					const scrollTop = $messageContainer.scrollTop();
-					const sortedMessages = response.data.messages.reverse();
-					sortedMessages.forEach((group) => {
-						if (group.messages) {
-							group.messages.reverse();
-						}
-					});
-					for (const group of sortedMessages) {
-						await processMessageGroup(group, false, false, true);
-					}
-				} else {
-					state.reachedLatestMessage = true;
-				}
-			} else {
-			}
-		} catch (error) {
-		} finally {
-			state.isLoading = false;
-		}
-	};
 	const markAsRead = async (channelId, messageId) => {
 		try {
 			const response = await $.ajax({
@@ -5371,10 +5328,12 @@
 				if (infinityScrollState) {
 					infinityScrollState.isLoadingHistory = false;
 					infinityScrollState.oldestMessageId = null;
+					infinityScrollState.newestMessageId = null;
 					infinityScrollState.scrollPosition = 0;
 					infinityScrollState.lastScrollTop = 0;
 					infinityScrollState.scrollDirection = 'none';
 					infinityScrollState.hasReachedEnd = false;
+					infinityScrollState.hasReachedNewest = false;
 					infinityScrollState.endMessageShown = false;
 
 					$('.end-of-history-message').remove();
@@ -6536,6 +6495,18 @@
 						}
 					}, 500);
 				} else if (target === 'first') {
+					// 最古メッセージを表示したので、これより上にはメッセージがない
+					if (infinityScrollState) {
+						infinityScrollState.hasReachedEnd = true;
+						infinityScrollState.hasReachedNewest = false;
+						
+						// 最新のメッセージIDを設定
+						const $lastMessage = $('#chat-messages .chat-message').last();
+						if ($lastMessage.length) {
+							infinityScrollState.newestMessageId = $lastMessage.data('message-id');
+						}
+					}
+					
 					setTimeout(() => {
 						const $messageContainer = $('#chat-messages');
 						$messageContainer.scrollTop(0);
@@ -7733,10 +7704,12 @@
 	let infinityScrollState = {
 		isLoadingHistory: false,
 		oldestMessageId: null,
+		newestMessageId: null,
 		scrollPosition: 0,
 		lastScrollTop: 0,
 		scrollDirection: 'none',
 		hasReachedEnd: false,
+		hasReachedNewest: false,
 		endMessageShown: false,
 		lastLoadTime: 0,
 		preventNextLoad: false,
@@ -7855,6 +7828,105 @@
 
 				$loader.fadeOut(200).remove();
 			});
+	};
+
+	const loadNewerMessages = (afterMessageId) => {
+		const now = Date.now();
+		const timeSinceLastLoad = now - infinityScrollState.lastLoadTime;
+
+		if (
+			infinityScrollState.isLoadingHistory ||
+			infinityScrollState.isLocked ||
+			infinityScrollState.preventNextLoad ||
+			timeSinceLastLoad < INFINITY_SCROLL_CONFIG.MIN_LOAD_INTERVAL
+		) {
+			return Promise.resolve();
+		}
+
+		if (infinityScrollState.hasReachedNewest) {
+			return Promise.resolve();
+		}
+
+		infinityScrollState.isLoadingHistory = true;
+		infinityScrollState.isLocked = true;
+		infinityScrollState.preventNextLoad = true;
+		infinityScrollState.lastLoadTime = now;
+		infinityScrollState.loadCount++;
+
+		if (window.LMSChat && window.LMSChat.state) {
+			window.LMSChat.state.isInfinityScrollLoading = true;
+		}
+
+		const $loader = $('<div class="loading-indicator bottom-loader">新しいメッセージを読み込み中...</div>');
+		$('#chat-messages').append($loader);
+
+		const loadCount = INFINITY_SCROLL_CONFIG.LOAD_MORE_COUNT;
+
+		const requestData = {
+			action: 'lms_get_messages_universal',
+			channel_id: window.LMSChat.state.currentChannel,
+			after_message_id: afterMessageId,
+			limit: loadCount,
+			nonce: lmsChat.nonce,
+		};
+
+		return $.ajax({
+			url: lmsChat.ajaxUrl,
+			type: 'POST',
+			data: requestData,
+			timeout: 15000,
+			dataType: 'json',
+			cache: false,
+		})
+			.done((response) => {
+				if (response.success && response.data && Array.isArray(response.data.messages)) {
+					const messages = response.data.messages;
+
+					if (messages.length > 0) {
+						appendNewerMessages(messages, afterMessageId);
+
+						// 最新のメッセージIDを更新
+						const lastMessage = messages[messages.length - 1];
+						infinityScrollState.newestMessageId = parseInt(lastMessage.id);
+					} else {
+						infinityScrollState.hasReachedNewest = true;
+					}
+				} else {
+					infinityScrollState.hasReachedNewest = true;
+				}
+			})
+			.fail((xhr, status, error) => {})
+			.always(() => {
+				infinityScrollState.isLoadingHistory = false;
+				infinityScrollState.isLocked = false;
+
+				setTimeout(() => {
+					infinityScrollState.preventNextLoad = false;
+				}, 3000);
+
+				if (window.LMSChat && window.LMSChat.state) {
+					window.LMSChat.state.isInfinityScrollLoading = false;
+				}
+
+				$loader.fadeOut(200).remove();
+			});
+	};
+
+	const appendNewerMessages = (messages, afterMessageId) => {
+		const $container = $('#chat-messages');
+
+		messages.forEach((message) => {
+			if (!messageIdTracker.has(message.id)) {
+				appendMessage(message);
+				messageIdTracker.add(message.id);
+			}
+		});
+
+		// 最新のメッセージIDを更新
+		const $lastMessage = $container.find('.chat-message').last();
+		if ($lastMessage.length) {
+			infinityScrollState.newestMessageId = $lastMessage.data('message-id');
+		}
 	};
 
 	const prependMessages = (messages, beforeMessageId, controlMetadata = null) => {
@@ -8701,20 +8773,20 @@
 				const totalMessages = $container.find('.chat-message').length;
 
 				const $firstMessage = $container.find('.chat-message').first();
-				let shouldTrigger = false;
+				const $lastMessage = $container.find('.chat-message').last();
+				let shouldTriggerUp = false;
+				let shouldTriggerDown = false;
 
+				// 上方向のスクロール（古いメッセージを読み込む）
 				if ($firstMessage.length > 0) {
 					const firstMessageTop = $firstMessage.position().top;
 					const triggerThreshold = 200;
-
-					if (scrollTop < triggerThreshold + 100) {
-					}
 
 					const canLoadMore =
 						infinityScrollState.oldestMessageId > 1 ||
 						(totalMessages >= 2 && !infinityScrollState.hasReachedEnd);
 
-					shouldTrigger =
+					shouldTriggerUp =
 						(scrollTop <= triggerThreshold || firstMessageTop > -100) &&
 						!infinityScrollState.isLoadingHistory &&
 						!infinityScrollState.hasReachedEnd &&
@@ -8724,8 +8796,24 @@
 						totalMessages >= 2;
 				}
 
-				if (shouldTrigger) {
+				// 下方向のスクロール（新しいメッセージを読み込む）
+				if ($lastMessage.length > 0 && infinityScrollState.hasReachedEnd) {
+					const lastMessageBottom = $lastMessage.position().top + $lastMessage.outerHeight();
+					const triggerThreshold = clientHeight - 200;
+
+					shouldTriggerDown =
+						lastMessageBottom < clientHeight + 200 &&
+						!infinityScrollState.isLoadingHistory &&
+						!infinityScrollState.hasReachedNewest &&
+						!infinityScrollState.isLocked &&
+						infinityScrollState.newestMessageId &&
+						totalMessages >= 2;
+				}
+
+				if (shouldTriggerUp) {
 					loadHistoryMessages(infinityScrollState.oldestMessageId);
+				} else if (shouldTriggerDown) {
+					loadNewerMessages(infinityScrollState.newestMessageId);
 				}
 
 				infinityScrollState.lastScrollTop = scrollTop;
