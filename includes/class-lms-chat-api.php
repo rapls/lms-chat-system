@@ -3757,6 +3757,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
 
     $channel_id = isset($_POST['channel_id']) ? intval($_POST['channel_id']) : 0;
     $before_message_id = isset($_POST['before_message_id']) ? intval($_POST['before_message_id']) : 0;
+    $after_message_id = isset($_POST['after_message_id']) ? intval($_POST['after_message_id']) : 0;
     $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 50;
     
     
@@ -3772,11 +3773,18 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
       // メッセージ取得クエリを構築
       $where_clause = "m.channel_id = %d AND (m.deleted_at IS NULL OR m.deleted_at = '0000-00-00 00:00:00')";
       $params = [$channel_id];
+      $order_direction = 'DESC'; // デフォルトは降順（古い→新しい）
       
       if ($before_message_id > 0) {
-        // 特定メッセージより前の履歴を取得
+        // 特定メッセージより前の履歴を取得（上方向スクロール）
         $where_clause .= " AND m.id < %d";
         $params[] = $before_message_id;
+        $order_direction = 'DESC';
+      } elseif ($after_message_id > 0) {
+        // 特定メッセージより後の履歴を取得（下方向スクロール）
+        $where_clause .= " AND m.id > %d";
+        $params[] = $after_message_id;
+        $order_direction = 'ASC'; // 昇順に変更
       }
       
       // 高速化: ユーザー情報をJOINで一括取得
@@ -3786,7 +3794,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
          FROM $messages_table m
          LEFT JOIN $users_table u ON m.user_id = u.id
          WHERE $where_clause
-         ORDER BY m.id DESC
+         ORDER BY m.id $order_direction
          LIMIT %d",
         array_merge($params, [$limit])
       );
