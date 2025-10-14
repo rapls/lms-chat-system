@@ -1064,14 +1064,13 @@
 			} else {
 				$('.parent-message-reactions').remove();
 			}
-			setTimeout(() => {
-				if (
-					window.LMSChat.reactionActions &&
-					window.LMSChat.reactionActions.refreshParentMessageReactions
-				) {
-					window.LMSChat.reactionActions.refreshParentMessageReactions(messageId, true);
-				}
-			}, 100);
+			// リアクション更新を即座に実行
+			if (
+				window.LMSChat.reactionActions &&
+				window.LMSChat.reactionActions.refreshParentMessageReactions
+			) {
+				window.LMSChat.reactionActions.refreshParentMessageReactions(messageId, true);
+			}
 			const $parentMessageBody = $('.parent-message-body');
 			if ($parentMessageBody.length) {
 				$parentMessageBody.removeClass('scrollable scrolling');
@@ -1097,9 +1096,7 @@
 					}
 				};
 				initialCheck();
-				setTimeout(initialCheck, 300);
-				setTimeout(initialCheck, 800);
-				setTimeout(initialCheck, 1500);
+				// 1回のみチェック（即座）
 			}
 			markThreadAsRead(messageId);
 			setupThreadScroll();
@@ -1113,50 +1110,46 @@
 					}
 				}
 			};
-			setTimeout(ensureScrollToBottom, 300);
-			setTimeout(ensureScrollToBottom, 600);
-			setTimeout(ensureScrollToBottom, 1000);
-			setTimeout(ensureScrollToBottom, 1500);
-			setTimeout(() => {
+			// 即座にスクロール（1回のみ）
+			requestAnimationFrame(ensureScrollToBottom);
+			// 入力フィールドを即座にフォーカス
+			requestAnimationFrame(() => {
 				$('.thread-input').focus();
-			}, 800);
+			});
 			$(document).trigger('thread:opened', [messageId]);
-			setTimeout(() => {
-				if (
-					window.LMSChat.reactions &&
-					typeof window.LMSChat.reactions.loadReactionsForThread === 'function'
-				) {
-					window.LMSChat.reactions.loadReactionsForThread(messageId);
-				}
-				if (
-					window.LMSChat.reactions &&
-					typeof window.LMSChat.reactions.triggerImmediatePolling === 'function'
-				) {
-					window.LMSChat.reactions.triggerImmediatePolling();
-				}
-			}, 500);
-			setTimeout(() => {
-				// バッジ機能の復元（変数が定義されている場合のみ）
-				if (typeof originalUpdateBadge !== 'undefined') {
-					window.updateChannelBadge = originalUpdateBadge;
-				}
-				if (typeof originalUpdateDisplay !== 'undefined') {
-					window.updateChannelBadgeDisplay = originalUpdateDisplay;
-				}
-				if (typeof originalUpdateForce !== 'undefined') {
-					window.updateChannelBadgeDisplayForce = originalUpdateForce;
-				}
+			// リアクション読み込みを即座に実行
+			if (
+				window.LMSChat.reactions &&
+				typeof window.LMSChat.reactions.loadReactionsForThread === 'function'
+			) {
+				window.LMSChat.reactions.loadReactionsForThread(messageId);
+			}
+			if (
+				window.LMSChat.reactions &&
+				typeof window.LMSChat.reactions.triggerImmediatePolling === 'function'
+			) {
+				window.LMSChat.reactions.triggerImmediatePolling();
+			}
+			// バッジ機能の復元を即座に実行
+			if (typeof originalUpdateBadge !== 'undefined') {
+				window.updateChannelBadge = originalUpdateBadge;
+			}
+			if (typeof originalUpdateDisplay !== 'undefined') {
+				window.updateChannelBadgeDisplay = originalUpdateDisplay;
+			}
+			if (typeof originalUpdateForce !== 'undefined') {
+				window.updateChannelBadgeDisplayForce = originalUpdateForce;
+			}
 
-				$('[data-temp-hidden="true"]').removeAttr('data-temp-hidden');
-				if (
-					typeof savedUnreadCounts !== 'undefined' &&
-					savedUnreadCounts &&
-					window.LMSChat &&
-					window.LMSChat.state
-				) {
-					window.LMSChat.state.unreadCounts = savedUnreadCounts;
-				}
-			}, 3000);
+			$('[data-temp-hidden="true"]').removeAttr('data-temp-hidden');
+			if (
+				typeof savedUnreadCounts !== 'undefined' &&
+				savedUnreadCounts &&
+				window.LMSChat &&
+				window.LMSChat.state
+			) {
+				window.LMSChat.state.unreadCounts = savedUnreadCounts;
+			}
 
 			// [STEP2-FIX] Long Pollingシステムに必要なスレッド開始イベントを発火
 			$(document).trigger('lms_thread_opened', [messageId]);
