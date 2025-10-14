@@ -1,0 +1,249 @@
+/**
+ * LMS Chat Admin SCSS
+ * WordPress管理画面でのチャット管理機能用スタイル
+ */
+
+/* メインコンテナ */
+.lms-chat-admin-dashboard,
+.lms-chat-health-check {
+	margin-top: 20px;
+}
+
+/* カード */
+.lms-chat-admin-dashboard .card,
+.lms-chat-health-check .card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+
+	h2 {
+		margin-top: 0;
+		padding-bottom: 10px;
+		border-bottom: 1px solid #dcdcde;
+	}
+}
+
+/* 説明文 */
+.lms-chat-health-check .description {
+	color: #646970;
+	margin: 15px 0;
+	line-height: 1.6;
+}
+
+/* ボタン */
+#run-health-check {
+	font-size: 14px;
+	padding: 8px 16px;
+	height: auto;
+	line-height: 1.5;
+	display: inline-flex;
+	align-items: center;
+
+	.dashicons {
+		margin-right: 5px;
+		font-size: 16px;
+		width: 16px;
+		height: 16px;
+		vertical-align: middle;
+	}
+}
+
+/* プログレス表示 */
+#health-check-progress,
+#fix-progress {
+	margin: 20px 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+
+	.spinner {
+		float: none;
+		margin: 0;
+	}
+}
+
+/* 結果表示エリア */
+#health-check-results {
+	margin-top: 20px;
+
+	h3 {
+		margin-top: 0;
+		color: #1d2327;
+	}
+}
+
+/* 統計ボックス */
+.stats-box {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 15px;
+	margin: 15px 0;
+
+	h4 {
+		margin-top: 0;
+		margin-bottom: 10px;
+		color: #1d2327;
+	}
+
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 10px;
+	}
+
+	li {
+		padding: 5px 0;
+		color: #2c3338;
+	}
+}
+
+/* 問題アイテム */
+.issue-item {
+	margin: 15px 0 !important;
+	padding: 12px !important;
+
+	h4 {
+		margin: 0 0 10px 0;
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.dashicons {
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		margin-right: 5px;
+		vertical-align: text-bottom;
+	}
+
+	&.notice-error .dashicons-warning {
+		color: #d63638;
+	}
+
+	&.notice-warning .dashicons-info {
+		color: #dba617;
+	}
+
+	details {
+		margin-top: 10px;
+	}
+
+	summary {
+		cursor: pointer;
+		color: #2271b1;
+		font-weight: 500;
+
+		&:hover {
+			color: #135e96;
+		}
+	}
+
+	pre {
+		background: #f0f0f1;
+		border: 1px solid #c3c4c7;
+		border-radius: 4px;
+		padding: 10px;
+		margin: 10px 0 0 0;
+		overflow-x: auto;
+		font-size: 12px;
+		line-height: 1.4;
+	}
+}
+
+/* 修復セクション */
+#repair-section {
+	margin-top: 30px;
+	padding: 20px;
+	background: #fff3cd;
+	border: 1px solid #ffeaa7;
+	border-radius: 4px;
+	text-align: center;
+}
+
+#repair-database {
+	font-size: 16px;
+	padding: 12px 24px;
+	height: auto;
+	display: inline-flex;
+	align-items: center;
+
+	.dashicons {
+		margin-right: 8px;
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+}
+
+/* 修復プログレス */
+#repair-progress {
+	margin: 20px 0;
+	padding: 15px;
+	background: #d1ecf1;
+	border: 1px solid #bee5eb;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+
+	.spinner {
+		float: none;
+		margin: 0;
+	}
+}
+
+/* 修復結果 */
+#repair-results {
+	margin-top: 20px;
+
+	h3 {
+		margin-top: 20px;
+		margin-bottom: 15px;
+		color: #1d2327;
+	}
+
+	.notice {
+		margin: 10px 0 !important;
+	}
+
+	.dashicons {
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		margin-right: 5px;
+		vertical-align: text-bottom;
+
+		&.dashicons-yes-alt {
+			color: #00a32a;
+		}
+
+		&.dashicons-no {
+			color: #d63638;
+		}
+	}
+}
+
+/* レスポンシブ対応 */
+@media screen and (max-width: 782px) {
+	.stats-box ul {
+		grid-template-columns: 1fr;
+	}
+
+	.fix-action-item button {
+		width: 100%;
+		margin-bottom: 10px;
+	}
+}
+/* 検索アイコンの位置調整 */
+span.dashicons.dashicons-search {
+	vertical-align: middle;
+}

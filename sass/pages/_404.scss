@@ -1,0 +1,154 @@
+/**
+ * 404ページのスタイル
+ */
+
+.error-404 {
+	min-height: calc(100vh - 200px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	background: #f5f7fa;
+}
+
+.error-container {
+	max-width: 600px;
+	text-align: center;
+	background: #fff;
+	padding: 3rem;
+	border-radius: 15px;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.error-image {
+	max-width: 300px;
+	margin: 0 auto 2rem;
+
+	img {
+		width: 100%;
+		height: auto;
+	}
+}
+
+.error-title {
+	font-size: 2rem;
+	color: #333;
+	margin-bottom: 1rem;
+}
+
+.error-message {
+	color: #666;
+	margin-bottom: 2rem;
+	line-height: 1.6;
+}
+
+.error-actions {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	margin-bottom: 3rem;
+
+	.button-primary,
+	.button-secondary {
+		padding: 0.8rem 2rem;
+		border-radius: 50px;
+		text-decoration: none;
+		font-weight: bold;
+		transition: all 0.3s ease;
+	}
+
+	.button-primary {
+		background: #40e0d0;
+		color: #fff;
+
+		&:hover {
+			background: #2ccac0;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(64, 224, 208, 0.2);
+		}
+	}
+
+	.button-secondary {
+		background: #fff;
+		color: #333;
+		border: 2px solid #ddd;
+
+		&:hover {
+			border-color: #40e0d0;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+	}
+}
+
+.error-help {
+	text-align: left;
+	border-top: 1px solid #eee;
+	padding-top: 2rem;
+
+	p {
+		color: #666;
+		margin-bottom: 1rem;
+	}
+
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	li {
+		margin-bottom: 0.5rem;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.help-link {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: #333;
+		text-decoration: none;
+		padding: 0.5rem;
+		border-radius: 8px;
+		transition: background-color 0.3s;
+
+		&:hover {
+			background-color: #f5f7fa;
+		}
+
+		img {
+			width: 24px;
+			height: 24px;
+			object-fit: contain;
+		}
+	}
+}
+
+// レスポンシブ対応
+@media (max-width: 768px) {
+	.error-404 {
+		padding: 1rem;
+	}
+
+	.error-container {
+		padding: 2rem 1.5rem;
+	}
+
+	.error-title {
+		font-size: 1.5rem;
+	}
+
+	.error-actions {
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.error-help {
+		.help-link {
+			padding: 0.75rem;
+		}
+	}
+}

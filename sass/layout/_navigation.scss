@@ -1,0 +1,56 @@
+/**
+ * ナビゲーションのスタイル
+ */
+
+@use '../abstracts/variables' as vars;
+
+.main-navigation {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: vars.$spacing-md;
+
+	.menu {
+		display: flex;
+		background-color: vars.$color-white;
+		padding: vars.$spacing-sm vars.$spacing-md;
+		border-radius: vars.$border-radius-base;
+		box-shadow: vars.$box-shadow-light;
+
+		&-item {
+			position: relative;
+			list-style: none;
+			margin: 0 vars.$spacing-sm;
+
+			a {
+				color: vars.$color-text-dark;
+				text-decoration: none;
+				font-size: vars.$font-size-base;
+				transition: color 0.3s ease;
+
+				&:hover {
+					color: vars.$color-primary;
+				}
+			}
+
+			&.current-menu-item a {
+				color: vars.$color-primary;
+			}
+		}
+	}
+}
+
+// レスポンシブ対応
+@media (max-width: vars.$breakpoint-md) {
+	.main-navigation {
+		.menu {
+			flex-direction: column;
+			gap: vars.$spacing-sm;
+			padding: vars.$spacing-sm;
+
+			&-item {
+				margin: 0;
+			}
+		}
+	}
+}

@@ -1,0 +1,392 @@
+/**
+ * ヘッダーのスタイル
+ */
+
+@use '../abstracts/variables' as vars;
+
+.site-header {
+	background: vars.$color-white;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	padding: 0.75rem 0;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 1000;
+	height: 73px;
+	display: flex;
+	align-items: center;
+
+	.header-container {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem 2rem;
+		max-width: 1200px;
+		margin: 0 auto;
+		width: 100%;
+		position: relative;
+	}
+}
+
+// メインコンテンツのパディング調整
+.site-content {
+	padding-top: 73px;
+}
+
+.user-avatar2 {
+	width: 58px;
+	height: 58px;
+	border-radius: 50%;
+	margin: 0 auto 1rem;
+	background: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+		margin-top: 1rem;
+	}
+}
+
+.site-branding {
+	flex: 0 0 auto;
+	margin-left: 1rem;
+
+	a {
+		display: flex;
+		align-items: center;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.site-logo {
+		height: 46px;
+		width: auto;
+		display: block;
+		margin-top: 1rem;
+	}
+}
+
+// チャットアイコンのスタイル
+.chat-icon-wrapper {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 10;
+
+	.chat-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background-color: #f5f5f5;
+		transition: all 0.2s ease;
+		position: relative;
+
+		&:hover {
+			background-color: #e0e0e0;
+			transform: scale(1.05);
+		}
+
+		img {
+			width: 32px;
+			height: 32px;
+		}
+	}
+}
+
+// ヘッダーの unread-badge は最初から非表示にする（最優先）
+html .site-header .chat-icon-wrapper .chat-icon .unread-badge {
+	position: absolute !important;
+	top: -5px !important;
+	right: -5px !important;
+	background-color: #ff4444 !important;
+	color: #fff !important;
+	font-size: 12px !important;
+	font-weight: bold !important;
+	min-width: 20px !important;
+	height: 20px !important;
+	border-radius: 10px !important;
+	display: none !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 0 6px !important;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+	animation: none !important;
+
+	&.visible {
+		display: flex !important;
+	}
+}
+
+// ユーザーメニュー
+.user-menu-wrapper {
+	position: relative;
+	margin-left: auto;
+}
+
+.user-menu-button {
+	display: flex;
+	align-items: center;
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+
+	&:hover {
+		opacity: 0.8;
+	}
+}
+
+.user-avatar {
+	width: 58px;
+	height: 58px;
+	border-radius: 50%;
+	overflow: hidden;
+
+	img {
+		width: 58px;
+		height: 58px;
+		object-fit: cover;
+	}
+}
+
+.user-info {
+	padding: 8px 16px;
+	margin-bottom: 4px;
+
+	.user-name {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #333;
+		line-height: 1.4;
+		display: block;
+	}
+
+	.user-type {
+		font-size: 0.75rem;
+		color: #666;
+		display: block;
+		margin-top: 2px;
+	}
+}
+
+.dropdown-arrow {
+	width: 12px;
+	height: 12px;
+	transition: transform 0.2s ease;
+
+	&.open {
+		transform: rotate(180deg);
+	}
+}
+
+// プルダウンメニュー
+.user-menu {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+		0 9px 28px 8px rgba(0, 0, 0, 0.05);
+	min-width: 200px;
+	padding: 4px 0;
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(-10px);
+	transition: all 0.2s ease-in-out;
+	z-index: 1001;
+
+	&.show {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: -4px;
+		right: 14px;
+		width: 8px;
+		height: 8px;
+		background: #fff;
+		transform: rotate(45deg);
+		box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.06);
+	}
+
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	li {
+		margin: 0;
+		padding: 0;
+	}
+
+	a {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 10px 16px;
+		color: #333;
+		text-decoration: none;
+		transition: all 0.2s ease;
+		font-size: 0.875rem;
+		line-height: 1.5715;
+
+		img {
+			width: 20px;
+			height: 20px;
+			object-fit: contain;
+		}
+
+		&:hover {
+			background: rgba(0, 0, 0, 0.04);
+		}
+	}
+
+	.divider {
+		height: 1px;
+		background-color: #f0f0f0;
+		margin: 4px 0;
+	}
+
+	.logout {
+		color: #ff4d4f;
+
+		&:hover {
+			color: #ff7875;
+			background: #fff1f0;
+		}
+	}
+}
+
+// レスポンシブ対応
+@media (max-width: 768px) {
+	.site-header {
+		padding: 0.5rem 0;
+	}
+
+	.header-container {
+		padding: 0 1rem;
+	}
+
+	.site-branding {
+		margin-right: 1rem;
+
+		.site-logo {
+			height: 32px;
+		}
+	}
+
+	.user-menu-button {
+		padding: 0;
+	}
+
+	.user-avatar {
+		width: 58px;
+		height: 58px;
+	}
+
+	.user-info {
+		display: none;
+	}
+
+	.user-menu {
+		position: fixed;
+		top: auto;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		width: 100%;
+		border-radius: 16px 16px 0 0;
+		transform: translateY(100%);
+		margin: 0;
+		padding: 16px 0 calc(16px + env(safe-area-inset-bottom));
+		background: #fff;
+		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+
+		&.show {
+			transform: translateY(0);
+		}
+
+		&::before {
+			display: none;
+		}
+
+		ul {
+			padding: 0 16px;
+		}
+
+		a {
+			padding: 12px 16px;
+			justify-content: center;
+			font-size: 1rem;
+			border-radius: 8px;
+
+			img {
+				width: 24px;
+				height: 24px;
+			}
+
+			&:hover {
+				background: rgba(0, 0, 0, 0.02);
+			}
+		}
+
+		.divider {
+			margin: 8px 0;
+		}
+
+		.logout {
+			margin-top: 8px;
+		}
+
+		.user-info {
+			text-align: center;
+			padding: 12px 16px;
+		}
+	}
+
+	.chat-icon-wrapper {
+		.chat-icon {
+			width: 40px;
+			height: 40px;
+
+			img {
+				width: 24px;
+				height: 24px;
+			}
+		}
+	}
+}
+
+// 管理バー表示時のメディアクエリ
+@media screen and (max-width: 600px) {
+	#wpadminbar {
+		position: fixed !important;
+	}
+}
+
+// チャットページ固有のスタイル調整を追加
+.page-template-page-chat {
+	.site-header {
+		z-index: 1002; // チャットUIより上に表示
+	}
+
+	.user-menu {
+		z-index: 1003; // ヘッダーより上に表示
+	}
+}

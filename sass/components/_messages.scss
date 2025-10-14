@@ -1,0 +1,154 @@
+/**
+ * メッセージコンポーネントのスタイル
+ */
+
+// ベースメッセージスタイル
+.message {
+	padding: $spacing-md;
+	margin-bottom: $spacing-md;
+	border-radius: $border-radius;
+	font-size: 0.875rem;
+	display: flex;
+	align-items: flex-start;
+	gap: $spacing-sm;
+
+	// アイコン
+	.message-icon {
+		flex-shrink: 0;
+		width: 1.5em;
+		height: 1.5em;
+	}
+
+	// メッセージ内容
+	.message-content {
+		flex: 1;
+
+		.message-title {
+			font-weight: 600;
+			margin-bottom: $spacing-xs;
+		}
+
+		p:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	// 閉じるボタン
+	.message-close {
+		flex-shrink: 0;
+		background: none;
+		border: none;
+		padding: 0;
+		margin-left: auto;
+		cursor: pointer;
+		opacity: 0.5;
+		transition: $transition-base;
+
+		&:hover {
+			opacity: 1;
+		}
+	}
+}
+
+// メッセージタイプ
+.message-info {
+	background-color: rgba($color-info, 0.1);
+	border: 1px solid rgba($color-info, 0.2);
+	color: $color-info;
+
+	.message-icon {
+		color: $color-info;
+	}
+}
+
+.message-success {
+	background-color: rgba($color-success, 0.1);
+	border: 1px solid rgba($color-success, 0.2);
+	color: $color-success;
+
+	.message-icon {
+		color: $color-success;
+	}
+}
+
+.message-warning {
+	background-color: rgba($color-warning, 0.1);
+	border: 1px solid rgba($color-warning, 0.2);
+	color: $color-warning;
+
+	.message-icon {
+		color: $color-warning;
+	}
+}
+
+.message-error {
+	background-color: rgba($color-error, 0.1);
+	border: 1px solid rgba($color-error, 0.2);
+	color: $color-error;
+
+	.message-icon {
+		color: $color-error;
+	}
+}
+
+// メッセージサイズ
+.message-sm {
+	padding: $spacing-xs $spacing-sm;
+	font-size: 0.75rem;
+}
+
+.message-lg {
+	padding: $spacing-lg;
+	font-size: 1rem;
+}
+
+// メッセージレイアウト
+.message-inline {
+	display: inline-flex;
+}
+
+.message-block {
+	display: flex;
+}
+
+// メッセージグループ
+.message-group {
+	display: flex;
+	flex-direction: column;
+	gap: $spacing-sm;
+
+	.message {
+		margin-bottom: 0;
+	}
+}
+
+// アニメーション
+.message-enter {
+	animation: messageSlideDown 0.3s ease-out;
+}
+
+.message-exit {
+	animation: messageSlideUp 0.3s ease-out;
+}
+
+@keyframes messageSlideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-1rem);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes messageSlideUp {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-1rem);
+	}
+}

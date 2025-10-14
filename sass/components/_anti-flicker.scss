@@ -1,0 +1,23 @@
+// Anti-flicker styles - Extracted from content-chat.php
+// These styles prevent visual flickering during page loads and transitions
+
+#chat-messages {
+  scroll-behavior: auto !important;
+  transition: none !important;
+}
+
+.chat-container {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.switching #chat-messages {
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+// Smooth scroll restoration
+.scroll-restoring {
+  scroll-behavior: auto !important;
+}

@@ -1,0 +1,115 @@
+/* アラートコンポーネント */
+.alert {
+	position: relative;
+	padding: 1rem 1.25rem;
+	margin-bottom: 1rem;
+	border: 1px solid transparent;
+	border-radius: 0.5rem;
+	font-size: 0.95rem;
+
+	// アラートの種類
+	&.alert-primary {
+		color: var(--color-primary-dark);
+		background-color: rgba(var(--color-primary-rgb), 0.1);
+		border-color: rgba(var(--color-primary-rgb), 0.2);
+	}
+
+	&.alert-success {
+		color: var(--color-success);
+		background-color: rgba(40, 167, 69, 0.1);
+		border-color: rgba(40, 167, 69, 0.2);
+	}
+
+	&.alert-error {
+		color: var(--color-error);
+		background-color: rgba(220, 53, 69, 0.1);
+		border-color: rgba(220, 53, 69, 0.2);
+	}
+
+	&.alert-warning {
+		color: var(--color-warning);
+		background-color: rgba(255, 193, 7, 0.1);
+		border-color: rgba(255, 193, 7, 0.2);
+	}
+
+	&.alert-info {
+		color: var(--color-info);
+		background-color: rgba(23, 162, 184, 0.1);
+		border-color: rgba(23, 162, 184, 0.2);
+	}
+
+	// アラート内の見出し
+	.alert-heading {
+		color: inherit;
+		margin-bottom: 0.5rem;
+		font-size: 1.1rem;
+		font-weight: 600;
+	}
+
+	// アラート内のリンク
+	a {
+		color: inherit;
+		text-decoration: underline;
+		font-weight: 600;
+
+		&:hover {
+			opacity: 0.8;
+		}
+	}
+
+	// 閉じるボタン
+	.alert-close {
+		position: absolute;
+		top: 0.75rem;
+		right: 1rem;
+		padding: 0.25rem;
+		font-size: 1.25rem;
+		line-height: 1;
+		color: inherit;
+		opacity: 0.5;
+		background: none;
+		border: 0;
+		cursor: pointer;
+
+		&:hover {
+			opacity: 0.75;
+		}
+	}
+
+	// アラート内の段落
+	p {
+		margin-bottom: 0.5rem;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	// アイコン付きアラート
+	&.alert-with-icon {
+		padding-left: 3rem;
+
+		.alert-icon {
+			position: absolute;
+			left: 1rem;
+			top: 1rem;
+			font-size: 1.25rem;
+		}
+	}
+
+	// アニメーション
+	&.alert-animate {
+		animation: alertSlideIn 0.3s ease-out;
+	}
+}
+
+@keyframes alertSlideIn {
+	from {
+		transform: translateY(-100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}

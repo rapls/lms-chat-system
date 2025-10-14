@@ -1,0 +1,146 @@
+/**
+ * フォームのスタイル
+ */
+
+@use '../abstracts/variables' as vars;
+
+.form-group {
+	margin-bottom: vars.$spacing-lg;
+
+	label {
+		display: block;
+		margin-bottom: vars.$spacing-xs;
+		font-weight: 500;
+		color: vars.$color-text-dark;
+	}
+
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='search'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='number'],
+	textarea,
+	select {
+		width: 100%;
+		padding: vars.$spacing-md;
+		border: 1px solid vars.$color-border;
+		border-radius: vars.$border-radius-base;
+		background: #fafafa;
+		transition: vars.$transition-base;
+
+		&:focus {
+			outline: none;
+			border-color: vars.$color-primary;
+			box-shadow: 0 0 0 3px rgba(vars.$color-primary, 0.1);
+		}
+
+		&::placeholder {
+			color: vars.$color-text-muted;
+		}
+
+		&:disabled {
+			background-color: vars.$color-background-light;
+			cursor: not-allowed;
+		}
+	}
+
+	textarea {
+		min-height: 150px;
+		resize: vertical;
+	}
+
+	select {
+		appearance: none;
+		background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right vars.$spacing-sm center;
+		padding-right: vars.$spacing-xl;
+	}
+}
+
+// フォームテキスト
+.form-text {
+	display: block;
+	margin-top: vars.$spacing-xs;
+	font-size: vars.$font-size-sm;
+	color: vars.$color-text-muted;
+}
+
+// フォームエラー
+.form-error {
+	display: block;
+	margin-top: vars.$spacing-xs;
+	color: vars.$color-error;
+	font-size: vars.$font-size-sm;
+}
+
+// チェックボックスとラジオボタン
+.form-check {
+	display: flex;
+	align-items: center;
+	margin-bottom: vars.$spacing-sm;
+
+	input[type='checkbox'],
+	input[type='radio'] {
+		margin-right: vars.$spacing-xs;
+	}
+
+	label {
+		margin-bottom: 0;
+		cursor: pointer;
+	}
+}
+
+// インラインフォーム
+.form-inline {
+	display: flex;
+	align-items: center;
+	gap: vars.$spacing-md;
+
+	.form-group {
+		margin-bottom: 0;
+		flex: 1;
+	}
+}
+
+// フォームグリッド
+.form-grid {
+	display: grid;
+	gap: vars.$spacing-md;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+// レスポンシブ対応
+@media (max-width: vars.$breakpoint-md) {
+	.form-inline {
+		flex-direction: column;
+		align-items: stretch;
+
+		.form-group {
+			margin-bottom: vars.$spacing-md;
+		}
+	}
+}
+
+// フォームのスタイル
+.eye-off-icon {
+	display: none;
+}
+
+// 画像プレビュー
+.image-preview {
+	max-width: 300px;
+	height: auto;
+}
+
+.image-preview-small {
+	max-width: 200px;
+	height: auto;
+}
+
+// reCAPTCHA
+.grecaptcha-badge {
+	visibility: visible !important;
+}

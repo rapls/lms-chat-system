@@ -1,0 +1,125 @@
+.switch {
+	position: relative;
+	display: inline-block;
+	width: 60px;
+	height: 34px;
+
+	input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	transition: 0.4s;
+
+	&:before {
+		position: absolute;
+		content: '';
+		height: 26px;
+		width: 26px;
+		left: 4px;
+		bottom: 4px;
+		background-color: white;
+		transition: 0.4s;
+	}
+
+	&.round {
+		border-radius: 34px;
+
+		&:before {
+			border-radius: 50%;
+		}
+	}
+}
+
+input:checked + .slider {
+	background-color: #2196f3;
+
+	&:before {
+		transform: translateX(26px);
+	}
+}
+
+pre {
+	background: #f5f5f5;
+	padding: 15px;
+	border-radius: 4px;
+	overflow-x: auto;
+}
+
+.wp-list-table {
+	.column-member_id {
+		width: 8%;
+	}
+	.column-user_login {
+		width: 12%;
+	}
+	.column-display_name {
+		width: 12%;
+	}
+	.column-member_type {
+		width: 8%;
+	}
+	.column-slack_channel {
+		width: 15%;
+	}
+	.column-subscribed_channels {
+		width: 25%;
+	}
+	.column-push_status {
+		width: 10%;
+	}
+	.column-last_updated {
+		width: 10%;
+	}
+}
+
+.status-icon {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 5px;
+
+	&.status-active {
+		background-color: #46b450;
+	}
+
+	&.status-inactive {
+		background-color: #dc3232;
+	}
+}
+
+.channel-tag {
+	display: inline-block;
+	padding: 2px 8px;
+	margin: 2px;
+	border-radius: 12px;
+	background: #e9ecef;
+	font-size: 0.9em;
+
+	&.channel-muted {
+		background: #ffd7d7;
+		text-decoration: line-through;
+	}
+}
+
+.debug-info {
+	margin: 10px 0;
+	padding: 10px;
+	background: #f8f9fa;
+	border-left: 4px solid #646970;
+
+	h3 {
+		margin-top: 0;
+	}
+}

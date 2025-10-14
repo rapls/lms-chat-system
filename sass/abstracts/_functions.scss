@@ -1,0 +1,42 @@
+// カラーの明度を調整する関数
+@function adjust-color-lightness($color, $percentage) {
+	@return adjust-hue($color, $percentage);
+}
+
+// pxをremに変換する関数
+@function px-to-rem($px, $base: 16) {
+	@return ($px / $base) * 1rem;
+}
+
+// 配列から値を取得する関数
+@function array-get($array, $key, $default: null) {
+	@if map-has-key($array, $key) {
+		@return map-get($array, $key);
+	}
+	@return $default;
+}
+
+// z-indexの値を管理する関数
+$z-indexes: (
+	'modal': 1000,
+	'overlay': 900,
+	'dropdown': 800,
+	'header': 700,
+	'footer': 600,
+);
+
+@function z($key) {
+	@return array-get($z-indexes, $key, 0);
+}
+
+// スペーシングの値を取得する関数
+@function spacing($key) {
+	$spacings: (
+		'xs': $spacing-xs,
+		'sm': $spacing-sm,
+		'md': $spacing-md,
+		'lg': $spacing-lg,
+		'xl': $spacing-xl,
+	);
+	@return array-get($spacings, $key, $spacing-md);
+}

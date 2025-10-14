@@ -1,0 +1,13 @@
+@use '../abstracts/variables' as *;
+
+.button-link-delete {
+	color: $color-error;
+
+	&:hover {
+		color: lighten($color-error, 10%);
+	}
+}
+
+.search-box {
+	margin: $spacing-md 0;
+}

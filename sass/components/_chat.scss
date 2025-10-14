@@ -1,0 +1,5911 @@
+/**
+ * チャット機能のスタイル
+ */
+
+// バッジロック中は更新をブロック
+.unread-badge.badge-locked {
+	pointer-events: none !important;
+	transition: none !important;
+}
+
+// リアクション関連のスタイル
+.reaction-item {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 6px;
+	border-radius: 12px;
+	background-color: #f0f2f5;
+	cursor: pointer;
+	user-select: none;
+	border: 1px solid transparent;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background-color: #e4e6eb;
+	}
+
+	&.user-reacted {
+		background-color: #e7f3ff;
+		border-color: #77a7e0;
+
+		&:hover {
+			background-color: #dae8fb;
+		}
+	}
+
+	.emoji {
+		font-size: 14px;
+		line-height: 1;
+		margin-right: 4px;
+	}
+
+	.count {
+		font-size: 12px;
+		font-weight: 500;
+		color: #65676b;
+	}
+}
+
+.reaction-tooltip {
+	position: absolute;
+	background-color: rgba(0, 0, 0, 0.8);
+	color: white;
+	padding: 5px 10px;
+	border-radius: 4px;
+	font-size: 12px;
+	white-space: nowrap;
+	z-index: 9999;
+	pointer-events: none;
+
+	&:after {
+		content: '';
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		margin-left: -5px;
+		border-width: 5px;
+		border-style: solid;
+		border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+	}
+}
+
+// 重複した close-thread-btn を非表示にして、thread-header の .close-thread のみを使用
+.close-thread-btn {
+	display: none !important;
+}
+
+.chat-wrapper {
+	padding: 20px;
+	min-height: calc(100vh - 73px);
+	background-color: #f8f9fa;
+
+	@media (max-width: 768px) {
+		padding: 0;
+	}
+}
+
+.chat-error,
+.chat-success {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 10px 20px;
+	border-radius: 4px;
+	color: white;
+	font-weight: 500;
+	z-index: 1000;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+	animation: fadeIn 0.3s ease-out;
+}
+
+.chat-error {
+	background-color: #dc3545;
+}
+
+.chat-success {
+	background-color: #28a745;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.8);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.chat-container {
+	display: flex;
+	height: calc(100vh - 120px);
+	margin: 0 auto;
+	max-width: 1200px;
+	background-color: #fff;
+	border-radius: 16px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	overflow: hidden;
+
+	.chat-sidebar {
+		width: 280px;
+		background-color: #f8f9fa;
+		border-right: 1px solid #edf0f2;
+		display: flex;
+		flex-direction: column;
+
+		.channels-header {
+			padding: 24px;
+			border-bottom: 1px solid #edf0f2;
+			background-color: #fff;
+
+			h2 {
+				margin: 0;
+				font-size: 1.25rem;
+				font-weight: 600;
+				color: #1a1f36;
+				display: flex;
+				align-items: center;
+				gap: 12px;
+
+				.channel-header-icon {
+					display: flex;
+					align-items: center;
+
+					img {
+						width: 18px;
+						height: 18px;
+						opacity: 0.7;
+					}
+				}
+
+				.channel-header-text {
+					flex: 1;
+				}
+			}
+		}
+
+		.channels-list {
+			flex: 1;
+			overflow-y: auto;
+			padding: 12px 0;
+
+			.channel-item {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 8px 16px;
+				cursor: pointer;
+				transition: background-color 0.2s ease;
+				border-radius: 4px;
+				margin: 2px 0;
+
+				&:hover {
+					background-color: #f0f2f5;
+				}
+
+				&.active {
+					background-color: #e7f1ff;
+					font-weight: 600;
+
+					.channel-name {
+						color: #0066ff;
+					}
+				}
+
+				.channel-name {
+					display: flex;
+					align-items: center;
+					gap: 12px;
+					color: #4a5568;
+					font-size: 0.95rem;
+					flex: 1;
+
+					.channel-icon {
+						width: 18px;
+						height: 18px;
+						opacity: 0.7;
+						transition: opacity 0.2s ease;
+					}
+				}
+
+				.unread-badge {
+					background-color: #ff4757;
+					color: white;
+					font-size: 12px;
+					font-weight: 600;
+					padding: 2px 6px;
+					border-radius: 10px;
+					min-width: 20px;
+					height: 20px;
+					display: none;
+					align-items: center;
+					justify-content: center;
+					margin-left: 8px;
+					animation: fadeIn 0.3s ease-out;
+					box-shadow: 0 2px 4px rgba(255, 71, 87, 0.2);
+
+					&.visible {
+						display: flex;
+					}
+				}
+			}
+		}
+	}
+
+	.chat-main {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		background-color: #fff;
+
+		.chat-header {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 1rem;
+			border-bottom: 1px solid #e0e0e0;
+			background: #fff;
+			z-index: 10;
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+
+			.channel-info {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+
+				.channel-header-icon {
+					display: flex;
+					align-items: center;
+					width: 24px;
+					height: 24px;
+					justify-content: center;
+
+					img {
+						width: 18px;
+						height: 18px;
+						opacity: 0.7;
+					}
+				}
+
+				h2 {
+					margin: 0;
+					font-size: 1.25rem;
+					font-weight: 600;
+					color: #1a1f36;
+					display: flex;
+					align-items: center;
+				}
+			}
+
+			.header-right {
+				display: flex;
+				align-items: center;
+				gap: 16px;
+
+				.chat-search-container {
+					display: flex;
+					align-items: center;
+				}
+
+				.channel-members-count {
+					font-size: 0.85rem;
+					color: #666;
+					cursor: pointer;
+					padding: 2px 8px;
+					border-radius: 12px;
+					background: #f0f2f5;
+					transition: all 0.2s ease;
+					white-space: nowrap;
+
+					&:hover {
+						background: #e4e6e9;
+						color: #333;
+					}
+				}
+			}
+
+			.chat-header-actions {
+				display: flex;
+				align-items: center;
+
+				.menu-dropdown {
+					position: relative;
+
+					.menu-button {
+						background: none;
+						border: none;
+						cursor: pointer;
+						padding: 8px;
+						font-size: 18px;
+						color: #667085;
+						border-radius: 50%;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						transition: background-color 0.2s ease;
+						vertical-align: middle;
+
+						&:hover {
+							background-color: #f0f2f5;
+						}
+
+						&:focus {
+							outline: none;
+							box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+						}
+					}
+
+					.menu-content {
+						position: absolute;
+						right: 0;
+						top: 110%;
+						width: 200px;
+						background-color: #fff;
+						border-radius: 8px;
+						box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+						z-index: 100;
+						padding: 8px 0;
+						transform-origin: top right;
+						transform: scale(0.95);
+						opacity: 0;
+						visibility: hidden;
+						transition: all 0.2s ease;
+
+						&.show {
+							transform: scale(1);
+							opacity: 1;
+							visibility: visible;
+						}
+
+						.menu-item {
+							display: flex;
+							align-items: center;
+							padding: 10px 15px;
+							color: #344054;
+							text-decoration: none;
+							font-size: 14px;
+							transition: background-color 0.1s ease;
+							cursor: pointer;
+
+							&:hover {
+								background-color: #f9fafb;
+							}
+
+							svg,
+							img {
+								width: 18px;
+								height: 18px;
+								margin-right: 12px;
+								opacity: 0.75;
+							}
+
+							&.notification-item {
+								background-color: #e7f1ff;
+								color: #0066ff;
+
+								svg {
+									color: #0066ff;
+									opacity: 1;
+									fill: #0066ff;
+								}
+
+								&.enabled {
+									font-weight: 500;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		.chat-messages {
+			flex: 1;
+			overflow-y: auto;
+			padding: 24px;
+			background-color: #fcfcfd;
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			height: calc(100vh - 250px); // ヘッダーと入力欄の高さを考慮
+			padding-bottom: 40px; // 下部に余白を追加
+
+			.date-separator {
+				display: flex;
+				align-items: center;
+				margin: 20px 0;
+				position: relative;
+				cursor: pointer;
+
+				&:hover {
+					.date-text {
+						background: #f0f2f5;
+					}
+				}
+
+				&.highlight-separator {
+					animation: highlight-separator 2s ease;
+				}
+
+				&::before,
+				&::after {
+					content: '';
+					flex: 1;
+					height: 1px;
+					background: #e1e4e8;
+				}
+
+				.date-text {
+					padding: 5px 12px;
+					font-size: 14px;
+					font-weight: 500;
+					color: #65676b;
+					background: #f8f9fa;
+					border-radius: 16px;
+					margin: 0 12px;
+					transition: background 0.2s ease;
+				}
+			}
+
+			@keyframes highlight-separator {
+				0%,
+				100% {
+					background-color: transparent;
+				}
+				25%,
+				75% {
+					background-color: rgba(0, 102, 255, 0.1);
+				}
+			}
+
+			.chat-message {
+				margin-bottom: 24px;
+				max-width: 80%;
+				animation: fadeIn 0.3s ease-out;
+				position: relative;
+
+				&:last-child {
+					margin-bottom: 0;
+					padding-bottom: 20px;
+				}
+
+				.message-header {
+					margin-bottom: 6px;
+					font-size: 0.875rem;
+					display: flex;
+					align-items: center;
+					justify-content: space-between; // 変更: space-betweenに
+					position: relative; // 追加: 相対位置指定
+
+					.message-meta {
+						display: flex;
+						align-items: center;
+						gap: 8px;
+					}
+
+					.message-time {
+						color: #8f95a3;
+					}
+
+					.user-name {
+						font-weight: 600;
+					}
+
+					.thread-button {
+						display: inline-flex;
+						align-items: center;
+						gap: 8px;
+						color: #666;
+						text-decoration: none;
+						padding: 4px 8px;
+						border-radius: 4px;
+						transition: background-color 0.2s;
+						font-size: 0.9em;
+						opacity: 0.5;
+
+						.thread-text {
+							color: #666;
+						}
+						margin-left: auto; // 追加: 右寄せ
+						position: absolute; // 追加: 絶対位置指定
+						right: 0; // 追加: 右端に配置
+						top: 50%; // 追加: 上下中央
+						transform: translateY(-50%); // 追加: 上下中央調整
+
+						&:hover {
+							background-color: rgba(0, 102, 255, 0.1);
+						}
+
+						.thread-icon {
+							width: 16px;
+							height: 16px;
+							opacity: 0.7;
+						}
+
+						.thread-text {
+							color: #666;
+						}
+					}
+				}
+
+				.thread-badge {
+					position: absolute;
+					top: 8px;
+					right: 8px;
+					z-index: 2;
+				}
+
+				&:hover {
+					.thread-button {
+						opacity: 1;
+					}
+				}
+
+				.message-content {
+					padding: 12px 16px;
+					background-color: #f0f1f5;
+					color: #1a1f36;
+					border-radius: 16px;
+					line-height: 1.5;
+					font-size: 0.95rem;
+					position: relative;
+					white-space: normal;
+					word-wrap: break-word;
+					word-break: break-word;
+					overflow-wrap: break-word;
+					max-width: 100%;
+				}
+
+				.thread-info {
+					margin-top: 8px;
+					padding: 8px 16px;
+					display: flex;
+					align-items: center;
+					gap: 12px;
+					background: #fff;
+					border-radius: 8px;
+					cursor: pointer;
+					transition: background-color 0.2s ease;
+
+					&:hover {
+						background-color: #f8f9fa;
+					}
+
+					.thread-info-avatars {
+						display: flex;
+						align-items: center;
+						margin-right: 8px;
+						position: relative;
+						max-width: 140px; // 最大幅を設定
+						overflow: hidden;
+						flex-wrap: wrap;
+						gap: 2px;
+
+						.thread-avatar {
+							width: 24px;
+							height: 24px;
+							border-radius: 50%;
+							object-fit: cover;
+							border: 2px solid #fff;
+							margin-right: -8px;
+							transition: transform 0.2s ease, box-shadow 0.2s ease;
+							cursor: pointer;
+
+							&:last-child {
+								margin-right: 0;
+							}
+
+							&:hover {
+								transform: scale(1.1);
+								box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+								z-index: 10;
+								position: relative;
+							}
+						}
+
+						.thread-participants-count {
+							background: #666;
+							color: white;
+							font-size: 10px;
+							font-weight: 600;
+							border-radius: 50%;
+							width: 20px;
+							height: 20px;
+							display: flex;
+							align-items: center;
+							justify-content: center;
+							margin-left: 4px;
+							border: 2px solid #fff;
+							flex-shrink: 0;
+						}
+					}
+
+					.thread-info-text {
+						flex: 1;
+						font-size: 0.9em;
+						color: #666;
+						display: flex;
+						align-items: center;
+						gap: 12px;
+
+						.thread-info-status {
+							display: flex;
+							align-items: center;
+							gap: 8px;
+
+							.thread-reply-count {
+								color: #0066ff;
+								font-weight: 600;
+								display: inline-block;
+								cursor: pointer;
+								text-decoration: none;
+
+								&:hover {
+									text-decoration: none;
+								}
+							}
+
+							.thread-unread-badge {
+								background-color: #ff4757;
+								color: white;
+								font-size: 12px;
+								font-weight: 600;
+								padding: 2px 6px;
+								border-radius: 10px;
+								min-width: 20px;
+								height: 20px;
+								display: inline-flex;
+								align-items: center;
+								justify-content: center;
+								box-shadow: 0 2px 4px rgba(255, 71, 87, 0.2);
+							}
+						}
+
+						.thread-last-reply {
+							color: #8f95a3;
+						}
+					}
+				}
+
+				.message-actions {
+					display: none;
+					background: white;
+					border-radius: 8px;
+					box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+					z-index: 1000; /* 高いz-indexは維持 */
+					gap: 4px;
+					padding: 2px;
+				}
+
+				.message-content:hover .message-actions {
+					display: flex;
+				}
+
+				.thread-button:hover + .message-content .message-actions {
+					display: none;
+				}
+
+				.thread-button {
+					z-index: 9;
+				}
+			}
+		}
+
+		.chat-input-container {
+			position: relative;
+			padding: 20px;
+			border-top: 1px solid #edf0f2;
+
+			form {
+				position: relative;
+				display: flex;
+				gap: 12px;
+				align-items: flex-end;
+
+				&.drag-over {
+					position: relative;
+
+					&::after {
+						content: '';
+						position: absolute;
+						top: 0;
+						left: 0;
+						right: 0;
+						bottom: 0;
+						background: rgba(0, 102, 255, 0.1);
+						border: 2px dashed #0066ff;
+						border-radius: 12px;
+						z-index: 1;
+						pointer-events: none;
+					}
+
+					&::before {
+						content: 'ファイルをドロップしてアップロード';
+						position: absolute;
+						top: 50%;
+						left: 50%;
+						transform: translate(-50%, -50%);
+						background: rgba(255, 255, 255, 0.95);
+						padding: 12px 24px;
+						border-radius: 8px;
+						color: #0066ff;
+						font-weight: 600;
+						font-size: 1.1rem;
+						box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+						z-index: 2;
+						white-space: nowrap;
+						pointer-events: none;
+					}
+				}
+			}
+
+			.attach-file-button {
+				padding: 8px;
+				background: none;
+				border: none;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 4px;
+
+				&:hover {
+					background-color: #f5f5f5;
+				}
+
+				img {
+					width: 20px;
+					height: 20px;
+					opacity: 0.6;
+				}
+			}
+
+			.file-preview {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 12px;
+				margin-top: 8px;
+				padding: 8px;
+
+				.file-item {
+					position: relative;
+					display: flex;
+					align-items: center;
+					padding: 8px;
+					margin-bottom: 8px;
+					background: #f8f9fa;
+					border-radius: 8px;
+					position: relative;
+
+					.file-thumb {
+						width: 100px;
+						height: 60px;
+						margin: 0 auto;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						background: #fff;
+						border-radius: 4px;
+						overflow: hidden;
+
+						img.file-thumbnail {
+							max-width: 100%;
+							max-height: 100%;
+							width: auto;
+							height: auto;
+							object-fit: cover;
+						}
+
+						img.file-icon {
+							width: 32px;
+							height: 32px;
+							opacity: 0.7;
+						}
+					}
+
+					/* スピンアニメーション定義 */
+					@keyframes spin {
+						0% {
+							transform: rotate(0deg);
+						}
+						100% {
+							transform: rotate(360deg);
+						}
+					}
+
+					/* アップロード中のファイルアイテムのスタイル */
+					&.uploading {
+						opacity: 0.8;
+						background: #f0f7ff;
+						box-shadow: 0 0 0 1px rgba(0, 102, 255, 0.2);
+
+						.file-thumb {
+							background: rgba(255, 255, 255, 0.9);
+						}
+					}
+
+					.file-info {
+						flex: 1;
+						min-width: 0;
+
+						.file-name {
+							font-size: 14px;
+							margin-bottom: 4px;
+							margin-left: 4px;
+							white-space: nowrap;
+							overflow: hidden;
+							text-overflow: ellipsis;
+						}
+
+						.file-size {
+							font-size: 12px;
+							color: #666;
+							margin-left: 4px;
+						}
+					}
+
+					.file-remove {
+						padding: 4px;
+						background: none;
+						border: none;
+						cursor: pointer;
+						color: #666;
+						opacity: 0;
+						font-size: 2rem;
+						transition: all 0.2s ease;
+
+						svg {
+							width: 16px;
+							height: 16px;
+						}
+
+						&:hover {
+							color: #dc2626;
+						}
+					}
+
+					&:hover .file-remove {
+						opacity: 1;
+					}
+				}
+			}
+		}
+	}
+}
+
+.members-modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 2000;
+
+	.members-modal-content {
+		position: relative;
+		background: #fff;
+		width: 90%;
+		max-width: 400px;
+		margin: 100px auto;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+
+	.members-modal-header {
+		padding: 16px;
+		border-bottom: 1px solid #edf0f2;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+
+		h3 {
+			margin: 0;
+			font-size: 1.1rem;
+			color: #1a1f36;
+		}
+	}
+
+	.close-modal {
+		background: none;
+		border: none;
+		font-size: 1.5rem;
+		color: #666;
+		cursor: pointer;
+		padding: 0;
+		width: 24px;
+		height: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: color 0.2s ease;
+
+		&:hover {
+			color: #333;
+		}
+	}
+
+	.members-list {
+		padding: 16px;
+		max-height: 400px;
+		overflow-y: auto;
+	}
+
+	.member-item {
+		display: flex;
+		align-items: center;
+		padding: 8px;
+		border-radius: 6px;
+		transition: background-color 0.2s ease;
+
+		&:hover {
+			background-color: #f8f9fa;
+		}
+	}
+
+	.member-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		margin-right: 12px;
+		overflow: hidden;
+
+		img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	}
+
+	.member-name {
+		font-size: 0.95rem;
+		color: #1a1f36;
+	}
+}
+
+.channel-section {
+	margin-bottom: 24px;
+
+	.channel-section-title {
+		padding: 0 24px 8px;
+		margin: 0;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #8f95a3;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+}
+
+.no-channels {
+	padding: 16px 24px;
+	color: #8f95a3;
+	font-size: 0.95rem;
+	text-align: center;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.8);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@media (max-width: 768px) {
+	.chat-container {
+		margin: 0;
+		height: calc(100vh - 73px);
+		border-radius: 0;
+
+		.chat-sidebar {
+			width: 240px;
+
+			.channels-header {
+				padding: 20px;
+			}
+
+			.channels-list {
+				.channel-item {
+					padding: 10px 20px;
+				}
+			}
+		}
+
+		.chat-main {
+			.chat-header {
+				padding: 20px;
+			}
+
+			.chat-messages {
+				padding: 20px;
+
+				.chat-message {
+					max-width: 85%;
+				}
+			}
+
+			.chat-input-container {
+				padding: 16px;
+
+				.chat-input {
+					padding: 12px;
+					min-height: 44px;
+				}
+
+				.send-button {
+					padding: 10px 20px;
+					height: 44px;
+				}
+			}
+		}
+	}
+
+	.members-modal {
+		.members-modal-content {
+			width: 95%;
+			margin: 50px auto;
+		}
+	}
+}
+
+.message-group {
+	margin-bottom: 24px;
+
+	.date-separator {
+		margin-bottom: 16px;
+	}
+
+	.chat-message {
+		margin-bottom: 12px;
+		animation: fadeIn 0.3s ease-out;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+}
+
+.channel-item {
+	display: flex;
+	align-items: center;
+	padding: 0.5rem 1.25rem;
+}
+
+.channel-name {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	color: #4a5568;
+	font-size: 0.95rem;
+	flex: 1;
+}
+
+#current-channel-name {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+
+	.channel-header-icon {
+		display: flex;
+		align-items: center;
+	}
+
+	.channel-header-text {
+		flex: 1;
+		margin-right: auto;
+	}
+}
+
+.channel-members-count {
+	font-size: 0.85rem;
+	color: #666;
+	cursor: pointer;
+	padding: 2px 8px;
+	border-radius: 12px;
+	background: #f0f2f5;
+	transition: all 0.2s ease;
+	margin-left: auto;
+	white-space: nowrap;
+
+	&:hover {
+		background: #e4e6e9;
+		color: #333;
+	}
+}
+
+/* -----------------------------
+   スレッドメッセージ部分のスタイル
+   ----------------------------- */
+
+.thread-message {
+	position: relative;
+	margin-top: 8px; /* 追加するなら自由 */
+
+	.message-actions {
+		display: flex;
+		gap: 4px;
+		margin-top: 4px;
+
+		.action-button {
+			background: none;
+			border: none;
+			padding: 4px;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			transition: background-color 0.2s ease;
+
+			&:hover {
+				background-color: rgba(0, 0, 0, 0.1);
+			}
+
+			svg,
+			img {
+				width: 20px;
+				height: 20px;
+			}
+		}
+
+		.delete-thread-message {
+			display: none;
+			color: #000;
+		}
+	}
+
+	/* ユーザー自身の返信の場合のみ削除ボタンを表示 */
+	&.current-user {
+		.message-actions {
+			.delete-thread-message {
+				display: flex;
+			}
+		}
+	}
+}
+
+.user-name {
+	font-weight: 600;
+	/* 他人のメッセージはピンク色（デフォルト） */
+	color: #ff69b4;
+
+	/* 自分のメッセージは紫色に */
+	.current-user &.current-user-name,
+	.thread-message.current-user &.current-user-name,
+	.parent-message.current-user &.current-user-name {
+		color: #800080;
+	}
+}
+
+/* スレッドメッセージ専用のユーザー名色設定（優先度を高める） */
+.thread-message {
+	.user-name,
+	.other-user-name {
+		color: #ff69b4 !important; /* 他人のメッセージはピンク色 */
+	}
+
+	&.current-user {
+		.user-name,
+		.current-user-name {
+			color: #800080 !important; /* 自分のメッセージは紫色 */
+		}
+	}
+}
+
+/* 検索結果ハイライト */
+.chat-message.search-highlight,
+.thread-message.search-highlight {
+	background-color: #e7f1ff !important;
+	border-radius: 8px;
+	transition: background-color 0.5s ease-in-out;
+	animation: searchHighlight 3s ease-in-out;
+}
+
+@keyframes searchHighlight {
+	0% {
+		background-color: transparent;
+	}
+	15% {
+		background-color: #e7f1ff;
+	}
+	85% {
+		background-color: #e7f1ff;
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+.message-reactions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 5px;
+	transition: opacity 0.2s ease;
+}
+
+.reaction-item {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 6px;
+	border-radius: 12px;
+	background-color: #f0f2f5;
+	cursor: pointer;
+	user-select: none;
+	border: 1px solid transparent;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background-color: #e4e6eb;
+	}
+
+	&.user-reacted {
+		background-color: #e7f3ff;
+		border-color: #77a7e0;
+
+		&:hover {
+			background-color: #dae8fb;
+		}
+	}
+
+	.emoji {
+		font-size: 14px;
+		line-height: 1;
+		margin-right: 4px;
+	}
+
+	.count {
+		font-size: 12px;
+		font-weight: 500;
+		color: #65676b;
+	}
+}
+
+.reaction-tooltip {
+	position: absolute;
+	background-color: rgba(0, 0, 0, 0.8);
+	color: white;
+	padding: 5px 10px;
+	border-radius: 4px;
+	font-size: 12px;
+	max-width: 200px;
+	z-index: 9999;
+	pointer-events: none;
+	white-space: normal;
+	word-break: break-word;
+	text-align: center;
+
+	&:after {
+		content: '';
+		position: absolute;
+		bottom: -5px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 0;
+		height: 0;
+		border-left: 5px solid transparent;
+		border-right: 5px solid transparent;
+		border-top: 5px solid rgba(0, 0, 0, 0.8);
+	}
+}
+
+.add-reaction {
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	cursor: pointer;
+
+	&:hover {
+		opacity: 1;
+	}
+}
+
+.chat-message.pending-message,
+.thread-message.pending-message {
+	opacity: 0.8;
+	transition: opacity 0.3s ease;
+
+	&:not(.pending-message) {
+		animation: messageConfirm 0.3s ease-out;
+	}
+}
+
+@keyframes messageConfirm {
+	0% {
+		opacity: 0.5;
+		transform: scale(0.98);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.chat-message:hover .add-reaction,
+.thread-message:hover .add-reaction {
+	opacity: 0.7;
+}
+
+/* 親メッセージのリアクション表示 */
+.parent-message-reactions {
+	margin-top: 8px;
+	margin-bottom: 12px;
+	padding-left: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	/* リアクションが存在する場合はこちらにドロップシャドウを適用 */
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* .parent-message-reactionsが存在する場合は.parent-messageのシャドウを非表示にする */
+.parent-message:has(+ .parent-message-reactions) {
+	box-shadow: none;
+}
+
+.message-actions {
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	display: none;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	z-index: 10;
+	gap: 4px;
+	padding: 2px;
+}
+
+.chat-message:hover .message-actions {
+	display: flex;
+}
+
+.action-button {
+	padding: 8px;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #666;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background: #f0f2f5;
+		color: #333;
+	}
+
+	img {
+		width: 20px;
+		height: 20px;
+		opacity: 0.8;
+	}
+}
+
+.emoji-picker {
+	position: fixed;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 12px;
+	z-index: 1000;
+	display: none;
+	width: 320px;
+
+	&.active {
+		display: block;
+	}
+
+	.emoji-categories {
+		display: flex;
+		gap: 8px;
+		margin-bottom: 8px;
+		border-bottom: 1px solid #edf0f2;
+		padding-bottom: 8px;
+	}
+
+	.emoji-category {
+		padding: 8px;
+		cursor: pointer;
+		opacity: 0.7;
+		transition: all 0.2s ease;
+		border-radius: 4px;
+
+		&:hover {
+			opacity: 1;
+			background: #f0f2f5;
+		}
+
+		&.active {
+			opacity: 1;
+			background: #e3efff;
+			color: #0066ff;
+		}
+	}
+
+	.emoji-list {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		gap: 4px;
+		max-height: 300px;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding: 8px;
+	}
+
+	.emoji-item {
+		padding: 8px;
+		cursor: pointer;
+		text-align: center;
+		border-radius: 6px;
+		font-size: 20px;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: #f0f2f5;
+			transform: scale(1.1);
+		}
+	}
+
+	.emoji-empty-message {
+		text-align: center;
+		color: #666;
+		padding: 16px;
+		font-size: 14px;
+		grid-column: 1 / -1;
+	}
+}
+
+.thread-panel {
+	position: fixed;
+	top: 0;
+	right: -400px;
+	width: 400px;
+	height: 100vh;
+	background: #fff;
+	box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+	z-index: 10000;
+	transition: right 0.3s ease;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden; /* パネル全体のオーバーフローを制御 */
+
+	// close-thread-btnを最優先で表示
+	.close-thread-btn {
+		z-index: 99999 !important;
+		position: fixed !important;
+		pointer-events: all !important;
+	}
+
+	&.open,
+	&.show {
+		right: 0;
+		visibility: visible;
+		opacity: 1;
+		transform: translateX(0);
+	}
+
+	visibility: hidden;
+	opacity: 0;
+	transition: all 0.3s ease;
+
+	.thread-header {
+		padding: 20px;
+		border-bottom: 1px solid #edf0f2;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		position: sticky;
+		top: 0;
+		background: #fff;
+		z-index: 10;
+
+		h3 {
+			margin: 0;
+			font-size: 1.1rem;
+			color: #1a1f36;
+		}
+
+		.close-thread {
+			width: 32px;
+			height: 32px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: transparent;
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 18px;
+			color: #666;
+			transition: all 0.2s ease;
+			position: relative;
+			outline: none;
+			user-select: none;
+			pointer-events: auto;
+			font-weight: normal;
+			line-height: 1;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			padding: 0;
+			margin-left: auto;
+
+			&:hover {
+				background: rgba(0, 0, 0, 0.05);
+				color: #333;
+				border-color: #999;
+			}
+
+			&:active {
+				background: rgba(0, 0, 0, 0.1);
+				transform: scale(0.95);
+			}
+
+			&:focus {
+				box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+				border-color: #888;
+			}
+		}
+	}
+
+	.parent-message {
+		padding: 0;
+		border-bottom: 1px solid #edf0f2;
+		background-color: #f8f9fa;
+		position: relative;
+		/* リアクションがない場合のデフォルトシャドウ */
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		display: flex;
+		flex-direction: column;
+		max-height: 300px; // スレッドパネル内で最大高さを制限
+		z-index: 10;
+
+		&::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 60px;
+			background: linear-gradient(
+				to bottom,
+				rgba(248, 249, 250, 0) 0%,
+				rgba(248, 249, 250, 0.8) 40%,
+				rgba(248, 249, 250, 1) 100%
+			);
+			pointer-events: none;
+			opacity: 0;
+			transition: opacity 0.3s ease;
+			z-index: 2;
+			border-bottom: 2px solid rgba(0, 102, 255, 0.3);
+		}
+
+		&.scrollable::after {
+			opacity: 1;
+			animation: gradient-pulse 3s ease-in-out infinite;
+		}
+
+		&:hover .message-actions {
+			display: flex;
+			opacity: 1;
+		}
+
+		.parent-message-header {
+			position: sticky;
+			top: 0;
+			z-index: 5;
+			padding: 15px 20px 10px;
+			background-color: #f8f9fa;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+			.message-header-left {
+				display: flex;
+				align-items: center;
+				font-size: 0.875rem;
+
+				.message-time {
+					color: #8f95a3;
+					margin-right: 8px;
+				}
+
+				.user-name {
+					font-weight: 600;
+				}
+			}
+
+			/* ヘッダー右側のアクション領域 */
+			.header-actions {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+
+				/* アクションメニュー */
+				.message-actions {
+					display: flex;
+					background: white;
+					border-radius: 8px;
+					box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+					z-index: 1001;
+					padding: 2px;
+					min-width: auto;
+					opacity: 0.9;
+
+					&:hover {
+						opacity: 1;
+						box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+					}
+				}
+
+				// .close-thread-btn スタイルを削除 - thread-headerの.close-threadを使用
+			}
+		}
+
+		.parent-message-body {
+			padding: 0 20px 15px;
+			overflow-y: auto;
+			flex: 1;
+			position: relative;
+			&::-webkit-scrollbar {
+				width: 6px;
+			}
+
+			&::-webkit-scrollbar-track {
+				background: rgba(0, 0, 0, 0.03);
+				border-radius: 3px;
+			}
+
+			&::-webkit-scrollbar-thumb {
+				background: rgba(0, 0, 0, 0.15);
+				border-radius: 3px;
+
+				&:hover {
+					background: rgba(0, 0, 0, 0.25);
+				}
+			}
+
+			&::before {
+				content: '';
+				position: absolute; // スクロールしても位置を固定
+				bottom: 15px;
+				right: 15px;
+				width: 30px;
+				height: 30px;
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 13l5 5 5-5'/%3E%3Cpath d='M7 6l5 5 5-5'/%3E%3C/svg%3E");
+				background-size: contain;
+				background-position: center;
+				background-repeat: no-repeat;
+				background-color: rgba(255, 255, 255, 0.9);
+				border-radius: 50%;
+				box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+				opacity: 0;
+				transition: opacity 0.3s ease, transform 0.3s ease;
+				z-index: 9999; // 非常に高い値にして確実に前面に表示
+				transform: translateY(10px);
+				pointer-events: none;
+				display: block;
+			}
+
+			&.scrollable::before {
+				opacity: 0.8;
+				transform: translateY(0);
+				animation: scroll-hint 2s ease-in-out infinite;
+			}
+
+			&.scrollable::after {
+				content: '';
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				height: 60px;
+				background: linear-gradient(
+					to bottom,
+					rgba(248, 249, 250, 0) 0%,
+					rgba(248, 249, 250, 0.8) 50%,
+					rgba(248, 249, 250, 1) 100%
+				);
+				pointer-events: none;
+				opacity: 1;
+				transition: opacity 0.2s ease;
+				z-index: 1004; // グラデーションより高い値
+			}
+
+			&.scrolling::before {
+				opacity: 0 !important;
+				transform: translateY(10px);
+				animation: none !important; // アニメーションも停止
+				transition: opacity 0.2s ease, transform 0.2s ease;
+			}
+
+			&.scrolling::after {
+				opacity: 0 !important;
+				transition: opacity 0.2s ease;
+			}
+		}
+
+		.message-content {
+			position: relative;
+			padding-top: 5px;
+			padding-right: 10px; /* 右側の余白を減らす */
+			padding-bottom: 30px; /* 下部に余白を追加してスクロールインジケーターと重ならないようにする */
+			word-wrap: break-word;
+			word-break: break-word;
+			overflow-wrap: break-word;
+			max-width: 100%;
+
+			.message-reactions {
+				margin-top: 8px;
+				padding: 4px 0;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 4px;
+
+				.reaction-item {
+					padding: 3px 6px;
+					font-size: 13px;
+
+					.emoji {
+						font-size: 15px;
+					}
+				}
+			}
+
+			/* アクションボタンを固定位置に配置 */
+			.message-actions {
+				/* JavaScriptで位置指定するので位置プロパティは不要 */
+				display: none;
+				background: white;
+				border-radius: 8px;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				z-index: 1001;
+				gap: 4px;
+				padding: 4px;
+				min-width: 40px;
+				animation: fadeIn 0.15s ease-out;
+				opacity: 0.95;
+
+				/* メニュー風のエフェクト */
+				&::before {
+					content: '';
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+					border-radius: inherit;
+					pointer-events: none;
+				}
+
+				/* ホバー時に完全に不透明に */
+				&:hover {
+					opacity: 1;
+					box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+				}
+			}
+		}
+	}
+
+	.thread-messages {
+		flex: 1;
+		overflow-y: auto;
+		padding: 20px;
+		scroll-behavior: auto;
+		padding-bottom: 80px; /* 入力フォーム分の余白を確保 */
+		min-height: 0; /* flexbox での正しいスクロール動作のために必要 */
+		max-height: calc(
+			100vh - 250px
+		); /* ヘッダー(80px)と入力フォーム(120px)、親メッセージ(最大300px)の合計から調整 */
+		height: auto; /* 動的な調整を可能にする */
+
+		.thread-message {
+			margin-bottom: 20px;
+			animation: fadeIn 0.3s ease-out;
+			position: relative;
+			opacity: 1 !important; /* 透明度の問題を強制的に修正 */
+
+			.message-header {
+				margin-bottom: 6px;
+				font-size: 0.875rem;
+
+				.message-time {
+					color: #8f95a3;
+					margin-right: 8px;
+				}
+
+				.user-name {
+					font-weight: 600;
+				}
+			}
+
+			.message-content {
+				position: relative;
+				padding: 12px 16px;
+				background-color: #f0f1f5;
+				color: #1a1f36;
+				border-radius: 16px;
+				line-height: 1.5;
+				font-size: 0.95rem;
+				word-wrap: break-word;
+				word-break: break-word;
+				overflow-wrap: break-word;
+				max-width: 100%;
+
+				.message-text {
+					padding-right: 80px;
+				}
+
+				.message-actions {
+					position: absolute;
+					top: 8px;
+					right: 8px;
+					display: flex;
+					gap: 4px;
+					z-index: 2;
+					opacity: 0;
+					transition: opacity 0.2s ease;
+
+					.action-button {
+						background: none;
+						border: none;
+						padding: 4px;
+						cursor: pointer;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						border-radius: 4px;
+						transition: background-color 0.2s ease;
+
+						&:hover {
+							background-color: rgba(0, 0, 0, 0.1);
+						}
+
+						img,
+						svg {
+							width: 20px;
+							height: 20px;
+							opacity: 0.7;
+						}
+
+						&.delete-thread-message {
+							color: #000;
+							display: none;
+						}
+					}
+				}
+			}
+
+			&:hover {
+				.message-actions {
+					opacity: 1;
+				}
+			}
+
+			&.current-user {
+				.message-actions {
+					.action-button.delete-thread-message {
+						display: flex;
+					}
+				}
+			}
+		}
+	}
+
+	.thread-input-container {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		padding: 16px;
+		border-top: 1px solid #edf0f2;
+		background-color: #fff;
+		z-index: 10;
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+
+		form {
+			position: relative;
+			display: flex;
+			gap: 8px;
+			width: 100%;
+			position: relative;
+
+			&.drag-over {
+				&::after {
+					content: '';
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					background: rgba(0, 102, 255, 0.1);
+					border: 2px dashed #0066ff;
+					border-radius: 12px;
+					z-index: 1;
+					pointer-events: none;
+				}
+
+				&::before {
+					content: 'ファイルをドロップしてアップロード';
+					position: absolute;
+					top: 50%;
+					left: 50%;
+					transform: translate(-50%, -50%);
+					background: rgba(255, 255, 255, 0.95);
+					padding: 12px 24px;
+					border-radius: 8px;
+					color: #0066ff;
+					font-weight: 600;
+					font-size: 1.1rem;
+					box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+					z-index: 2;
+					white-space: nowrap;
+					pointer-events: none;
+				}
+			}
+		}
+	}
+
+	.input-wrapper {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		width: 100%;
+		position: relative;
+	}
+
+	.attach-file-button {
+		padding: 8px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 4px;
+		transition: background-color 0.2s ease;
+
+		&:hover {
+			background-color: #f5f5f5;
+		}
+
+		img {
+			width: 20px;
+			height: 20px;
+			opacity: 0.6;
+		}
+	}
+
+	.thread-input {
+		flex-grow: 1;
+		min-height: 40px;
+		max-height: 120px;
+		padding: 8px 12px;
+		border: 1px solid #e0e0e0;
+		border-radius: 4px;
+		resize: none;
+		font-size: 0.875rem;
+		line-height: 1.5;
+		width: calc(100% - 40px);
+
+		&:focus {
+			outline: none;
+			border-color: #0052cc;
+		}
+	}
+
+	.send-button {
+		align-self: flex-end;
+		padding: 8px 16px;
+		background-color: #0052cc;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		width: 72px;
+		transition: all 0.2s ease;
+
+		&:hover:not(:disabled) {
+			background-color: #0747a6;
+		}
+
+		&:disabled {
+			background-color: #e5e7eb;
+			color: #8f95a3;
+			cursor: not-allowed;
+		}
+	}
+
+	.file-preview {
+		margin-top: 8px;
+	}
+}
+
+.upload-progress {
+	position: fixed;
+	bottom: 24px;
+	right: 24px;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	padding: 16px;
+	width: 320px;
+	z-index: 1000;
+	display: none;
+	animation: slideInUp 0.3s ease-out;
+
+	&.active {
+		display: block;
+	}
+
+	.progress-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 12px;
+
+		.progress-title {
+			font-weight: 600;
+			color: #1a1f36;
+			font-size: 0.95rem;
+		}
+
+		.progress-close {
+			width: 24px;
+			height: 24px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			opacity: 0.6;
+			border-radius: 50%;
+			transition: all 0.2s ease;
+
+			&:hover {
+				opacity: 1;
+				background: #f0f2f5;
+			}
+		}
+	}
+
+	.progress-bar {
+		height: 6px;
+		background: #f0f2f5;
+		border-radius: 3px;
+		overflow: hidden;
+		margin-bottom: 8px;
+
+		.progress-fill {
+			height: 100%;
+			background: #0066ff;
+			width: 0;
+			transition: width 0.3s ease;
+		}
+	}
+
+	.progress-status {
+		font-size: 0.85rem;
+		color: #666;
+		text-align: right;
+	}
+}
+
+@keyframes slideInUp {
+	from {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+.attachment-item {
+	margin-top: 10px;
+	max-width: 150px;
+	position: relative;
+	padding: 10px;
+	border: solid 1px #000;
+	border-radius: 20px;
+
+	.attachment-preview {
+		position: relative;
+		display: block;
+		width: 100%;
+
+		img,
+		.file-icon {
+			width: 100%;
+			height: auto;
+			object-fit: contain;
+			border-radius: 4px;
+			display: block;
+		}
+
+		.file-icon {
+			width: 90px;
+			padding: 20px;
+			box-sizing: border-box;
+			margin: 0 auto;
+		}
+	}
+
+	.attachment-download {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.5);
+		border-radius: 4px;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+		cursor: pointer;
+		text-decoration: none;
+
+		img {
+			width: 24px;
+			height: 24px;
+			filter: brightness(0) invert(1);
+		}
+
+		&:hover {
+			background: rgba(0, 0, 0, 0.7);
+		}
+	}
+
+	&:hover .attachment-download {
+		opacity: 1;
+	}
+
+	.attachment-info {
+		margin-top: 8px;
+
+		.file-name {
+			font-size: 0.875rem;
+			color: #1a1f36;
+			margin-bottom: 4px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.file-size {
+			font-size: 0.75rem;
+			color: #666;
+		}
+	}
+}
+
+img.file-icon {
+	min-width: 90px;
+}
+
+%send-button-base {
+	padding: 8px 16px;
+	border: none;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	margin-left: 8px;
+	align-self: flex-end;
+	position: relative;
+	overflow: hidden;
+
+	&.active {
+		background-color: #0052cc;
+		color: white;
+		box-shadow: 0 2px 4px rgba(0, 82, 204, 0.3);
+		transform: translateY(-1px);
+
+		&:hover {
+			background-color: #0747a6;
+			box-shadow: 0 3px 6px rgba(7, 71, 166, 0.4);
+		}
+
+		&:active {
+			transform: translateY(0);
+			box-shadow: 0 1px 2px rgba(7, 71, 166, 0.3);
+		}
+	}
+
+	&:not(:disabled) {
+		background-color: #0052cc;
+		color: white;
+
+		&:hover {
+			background-color: #0747a6;
+			transform: translateY(-1px);
+			box-shadow: 0 2px 4px rgba(7, 71, 166, 0.3);
+		}
+	}
+
+	&:disabled {
+		background-color: #e5e7eb;
+		color: #8f95a3;
+		cursor: not-allowed;
+	}
+}
+
+@keyframes sending-animation {
+	0% {
+		left: -100%;
+	}
+	100% {
+		left: 100%;
+	}
+}
+
+@keyframes success-animation {
+	0% {
+		transform: scale(0);
+		opacity: 0;
+	}
+	50% {
+		transform: scale(1.2);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.send-success-indicator {
+	position: absolute;
+	top: 50%;
+	right: 16px;
+	transform: translateY(-50%);
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background-color: #36b37e;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	pointer-events: none;
+
+	&.show {
+		animation: success-animation 0.5s forwards;
+	}
+
+	svg {
+		width: 10px;
+		height: 10px;
+		fill: white;
+	}
+}
+
+.chat-input-container {
+	.send-button {
+		@extend %send-button-base;
+	}
+}
+
+.thread-input-container {
+	.send-button {
+		@extend %send-button-base;
+	}
+}
+
+#main-chat-send-button {
+	&.active {
+		background-color: #0052cc;
+		color: white;
+		box-shadow: 0 2px 4px rgba(0, 82, 204, 0.3);
+		cursor: pointer;
+
+		&:hover {
+			background-color: #0747a6;
+		}
+	}
+
+	&:not(.active) {
+		background-color: #e5e7eb;
+		color: #8f95a3;
+		cursor: not-allowed;
+	}
+
+	&.sending {
+		position: relative;
+		overflow: hidden;
+	}
+}
+
+%input-base {
+	flex-grow: 1;
+	min-height: 40px;
+	max-height: 120px;
+	padding: 8px 12px;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	resize: none;
+	font-size: 0.875rem;
+	line-height: 1.5;
+
+	&:focus {
+		outline: none;
+		border-color: #0052cc;
+	}
+}
+
+.chat-input-container {
+	#chat-input {
+		@extend %input-base;
+	}
+}
+
+.thread-input-container {
+	.thread-input {
+		@extend %input-base;
+	}
+}
+
+%file-preview-base {
+	margin-top: 8px;
+
+	.file-item {
+		position: relative;
+		width: 120px;
+		height: 120px;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #f8f9fa;
+		border: 1px solid #e5e7eb;
+		padding: 8px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+
+		.file-thumb {
+			width: 100%;
+			height: 70px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			.file-thumbnail {
+				max-width: 100%;
+				max-height: 100%;
+				object-fit: contain;
+			}
+
+			.file-icon {
+				width: 48px;
+				height: 48px;
+				opacity: 0.7;
+			}
+		}
+
+		.file-info {
+			width: 100%;
+			.file-name {
+				font-size: 0.75rem;
+				color: #666;
+				text-align: left;
+				display: block;
+				width: 100%;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.file-size {
+				font-size: 0.75rem;
+				color: #666;
+				text-align: center;
+			}
+		}
+
+		.file-remove {
+			position: absolute;
+			top: 4px;
+			right: 4px;
+			width: 24px;
+			height: 24px;
+			background: rgba(0, 0, 0, 0.6);
+			border-radius: 50%;
+			color: white;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			font-size: 32px;
+			opacity: 0;
+			transition: all 0.2s ease;
+
+			&:hover {
+				background: rgba(0, 0, 0, 0.8);
+			}
+		}
+
+		&:hover .file-remove {
+			opacity: 1;
+		}
+	}
+}
+
+.chat-input-container,
+.thread-input-container {
+	form {
+		&.drag-over {
+			&::after {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0, 102, 255, 0.1);
+				border: 2px dashed #0066ff;
+				border-radius: 12px;
+				z-index: 1;
+				pointer-events: none;
+			}
+
+			&::before {
+				content: 'ファイルをドロップしてアップロード';
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				background: rgba(255, 255, 255, 0.95);
+				padding: 12px 24px;
+				border-radius: 8px;
+				color: #0066ff;
+				font-weight: 600;
+				font-size: 1.1rem;
+				box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+				z-index: 2;
+				white-space: nowrap;
+				pointer-events: none;
+			}
+		}
+	}
+}
+
+.chat-message.current-user .message-actions .delete-message {
+	display: flex;
+}
+
+.chat-message .message-actions .delete-message {
+	display: none;
+}
+
+/* ----------------------------------------------
+   スレッドメッセージの定義(下部再掲だが統合済み)
+   ---------------------------------------------- */
+
+.thread-message {
+	position: relative;
+	margin-bottom: 20px;
+
+	.message-content {
+		position: relative;
+		padding: 12px 16px;
+		background-color: #f0f1f5;
+		color: #1a1f36;
+		border-radius: 16px;
+		line-height: 1.5;
+		font-size: 0.95rem;
+		word-wrap: break-word;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		max-width: 100%;
+
+		.message-text {
+			padding-right: 80px;
+		}
+
+		.message-actions {
+			position: absolute;
+			top: 8px;
+			right: 8px;
+			display: flex;
+			gap: 4px;
+			z-index: 2;
+			opacity: 0;
+			transition: opacity 0.2s ease;
+
+			.action-button {
+				background: none;
+				border: none;
+				padding: 4px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 4px;
+				transition: background-color 0.2s ease;
+
+				&:hover {
+					background-color: rgba(0, 0, 0, 0.1);
+				}
+
+				img,
+				svg {
+					width: 20px;
+					height: 20px;
+					opacity: 0.7;
+				}
+
+				&.delete-thread-message {
+					color: #000;
+					display: none;
+				}
+			}
+		}
+	}
+
+	&:hover {
+		.message-actions {
+			opacity: 1;
+		}
+	}
+
+	&.current-user {
+		.message-actions {
+			.action-button.delete-thread-message {
+				display: flex;
+			}
+		}
+	}
+}
+
+.parent-message {
+	padding: 0;
+	border-bottom: 1px solid #edf0f2;
+	background-color: #f8f9fa;
+	position: relative;
+	/* リアクションがない場合のデフォルトシャドウ */
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+	display: flex;
+	flex-direction: column;
+	max-height: 300px; // スレッドパネル内で最大高さを制限
+	z-index: 10;
+
+	// スクロール可能であることを示すインジケーター
+	&::after {
+		display: none;
+	}
+
+	&.scrollable::after {
+		display: none;
+	}
+
+	// 親メッセージ全体にホバーした時にアクションを表示
+	&:hover .message-actions {
+		display: flex;
+		opacity: 1;
+	}
+
+	.parent-message-header {
+		position: sticky;
+		top: 0;
+		z-index: 5;
+		padding: 15px 20px 10px;
+		background-color: #f8f9fa;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+		// ヘッダーの下部にシャドウを追加して固定ヘッダーであることを示す
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+		.message-header-left {
+			display: flex;
+			align-items: center;
+			font-size: 0.875rem;
+
+			.message-time {
+				color: #8f95a3;
+				margin-right: 8px;
+			}
+
+			.user-name {
+				font-weight: 600;
+			}
+		}
+
+		/* ヘッダー右側のアクション領域 */
+		.header-actions {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+
+			/* アクションメニュー */
+			.message-actions {
+				display: flex;
+				background: white;
+				border-radius: 8px;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				z-index: 1001;
+				padding: 2px;
+				min-width: auto;
+				opacity: 0.9;
+
+				&:hover {
+					opacity: 1;
+					box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+				}
+			}
+
+			// .close-thread-btn スタイルを削除 - thread-headerの.close-threadを使用
+		}
+	}
+
+	.parent-message-body {
+		padding: 0 20px 15px;
+		overflow-y: auto;
+		flex: 1;
+		position: relative;
+		// スクロールバーをカスタマイズして視認性を向上
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		&::-webkit-scrollbar-track {
+			background: rgba(0, 0, 0, 0.03);
+			border-radius: 3px;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background: rgba(0, 0, 0, 0.15);
+			border-radius: 3px;
+
+			&:hover {
+				background: rgba(0, 0, 0, 0.25);
+			}
+		}
+
+		// スクロールインジケーター - 右下に配置（修正版）
+		&::before {
+			content: '';
+			position: absolute; // スクロールしても位置を固定
+			bottom: 15px;
+			left: auto; // 左の位置設定を解除
+			right: 15px; // 右下に配置
+			width: 30px;
+			height: 30px;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 13l5 5 5-5'/%3E%3Cpath d='M7 6l5 5 5-5'/%3E%3C/svg%3E");
+			background-size: contain;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-color: rgba(255, 255, 255, 0.9);
+			border-radius: 50%;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			opacity: 0;
+			transition: opacity 0.3s ease, transform 0.3s ease;
+			z-index: 10; // 他の要素より前面に表示（値を上げる）
+			transform: translateY(10px);
+			pointer-events: none;
+			display: block; // 確実に表示されるように
+		}
+
+		&.scrollable::before {
+			opacity: 0.8;
+			transform: translateY(0);
+			animation: scroll-hint 2s ease-in-out infinite;
+		}
+
+		// スクロール可能な場合に下部にグラデーションを表示
+		&.scrollable::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 60px;
+			background: linear-gradient(
+				to bottom,
+				rgba(248, 249, 250, 0) 0%,
+				rgba(248, 249, 250, 0.8) 50%,
+				rgba(248, 249, 250, 1) 100%
+			);
+			pointer-events: none;
+			opacity: 1;
+			z-index: 2;
+		}
+
+		// ユーザーがスクロールを始めたらインジケーターを非表示
+		&.scrolling::before {
+			opacity: 0;
+			animation: none; // アニメーションも停止
+		}
+
+		// ユーザーがスクロールを始めたらグラデーションも非表示
+		&.scrolling::after {
+			opacity: 0;
+		}
+	}
+
+	.message-content {
+		position: relative;
+		padding-top: 5px;
+		padding-right: 10px; /* 右側の余白を減らす */
+		padding-bottom: 30px; /* 下部に余白を追加してスクロールインジケーターと重ならないようにする */
+		word-wrap: break-word;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		max-width: 100%;
+
+		.message-reactions {
+			margin-top: 8px;
+			padding: 4px 0;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+
+			.reaction-item {
+				padding: 3px 6px;
+				font-size: 13px;
+
+				.emoji {
+					font-size: 15px;
+				}
+			}
+		}
+
+		/* アクションボタンを固定位置に配置 */
+		.message-actions {
+			/* JavaScriptで位置指定するので位置プロパティは不要 */
+			display: none;
+			background: white;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+			z-index: 1001;
+			gap: 4px;
+			padding: 4px;
+			min-width: 40px;
+			animation: fadeIn 0.15s ease-out;
+			opacity: 0.95;
+
+			/* メニュー風のエフェクト */
+			&::before {
+				content: '';
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+				border-radius: inherit;
+				pointer-events: none;
+			}
+
+			/* ホバー時に完全に不透明に */
+			&:hover {
+				opacity: 1;
+				box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+			}
+		}
+	}
+}
+
+@keyframes scroll-hint {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(5px);
+	}
+}
+
+.parent-message-reactions {
+	margin-top: 8px;
+	margin-bottom: 12px;
+	padding-left: 10px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	/* リアクションが存在する場合はこちらにドロップシャドウを適用 */
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* .parent-message-reactionsが存在する場合は.parent-messageのシャドウを非表示にする */
+.parent-message:has(+ .parent-message-reactions) {
+	box-shadow: none;
+}
+
+.new-mark {
+	background-color: #ff7020;
+	color: #ffffff;
+	font-size: 0.8rem;
+	padding: 0.2rem 0.4rem;
+	border-radius: 3px;
+	margin-left: 0.5rem;
+	animation: fadeIn 0.3s ease-out;
+	display: inline-block;
+	font-weight: bold;
+	box-shadow: 0 2px 4px rgba(255, 112, 32, 0.3);
+	position: relative;
+}
+
+/* viewed-once クラスだけを持つ場合は一度見たが、まだNewマークを消さない */
+.chat-message.viewed-once:not(.read-completely) .new-mark,
+.thread-message.viewed-once:not(.read-completely) .new-mark {
+	/* 表示状態を維持するが、アニメーションだけ停止 */
+	display: inline-block;
+
+	/* アニメーションを停止 */
+	&::before {
+		animation: none;
+	}
+}
+
+/* read-completely クラスがある場合は完全既読として扱い、Newマークを非表示 */
+.chat-message.read-completely .new-mark,
+.thread-message.read-completely .new-mark {
+	display: none !important;
+}
+
+@keyframes pulse {
+	0% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+	}
+
+	70% {
+		transform: scale(1);
+		box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+	}
+
+	100% {
+		transform: scale(0.95);
+		box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+	}
+}
+
+.thread-info {
+	.new-mark {
+		display: inline-block;
+		font-size: 0.75rem;
+		color: #0052cc;
+		background-color: #e6f7ff;
+		border: 1px solid #0052cc;
+		border-radius: 4px;
+		padding: 2px 4px;
+		margin-left: 6px;
+	}
+}
+
+.thread-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: #666;
+	text-decoration: none;
+	padding: 4px 8px;
+	border-radius: 4px;
+	transition: background-color 0.2s;
+	font-size: 0.9em;
+	opacity: 0;
+
+	.thread-text {
+		color: #666;
+	}
+
+	&:hover {
+		background-color: rgba(102, 102, 102, 0.1);
+	}
+
+	.thread-icon {
+		width: 16px;
+		height: 16px;
+		opacity: 0.7;
+	}
+
+	.thread-text {
+		color: #666;
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+%message-actions-base {
+	display: none;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	z-index: 500; /* close-thread-btnより低く設定 */
+	gap: 4px;
+	padding: 2px;
+
+	.action-button {
+		padding: 6px;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #666;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: #f0f2f5;
+			color: #333;
+		}
+
+		&.delete-message,
+		&.delete-thread-message,
+		&.delete-parent-message {
+			svg {
+				width: 16px;
+				height: 16px;
+				stroke: currentColor;
+			}
+
+			&:hover {
+				background: #fee2e2 !important;
+				color: #dc2626 !important;
+			}
+		}
+
+		img {
+			width: 20px;
+			height: 20px;
+			opacity: 0.8;
+		}
+	}
+}
+
+.chat-message .message-actions {
+	@extend %message-actions-base;
+}
+
+.thread-message .message-content .message-actions {
+	@extend %message-actions-base;
+}
+
+.parent-message .message-content .message-actions {
+	@extend %message-actions-base;
+}
+
+.chat-message:hover .message-actions,
+.thread-message:hover .message-actions,
+.parent-message:hover .message-actions {
+	display: flex;
+}
+
+/* カスタムコンテキストメニューのスタイル */
+.channel-context-menu {
+	background-color: #fff;
+	border: none;
+	border-radius: 12px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+	padding: 8px;
+	z-index: 10000;
+	min-width: 200px;
+	animation: fadeIn 0.2s ease-out;
+	backdrop-filter: blur(10px);
+	background: rgba(255, 255, 255, 0.98);
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+		border-radius: inherit;
+		pointer-events: none;
+	}
+
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	li {
+		padding: 10px 12px;
+		margin: 2px 0;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		color: #1a1f36;
+		font-size: 0.95rem;
+		border-radius: 8px;
+		transition: all 0.2s ease;
+		position: relative;
+
+		&:hover {
+			background-color: rgba(0, 102, 255, 0.06);
+			color: #0066ff;
+
+			.menu-icon {
+				opacity: 1;
+				transform: scale(1.1);
+			}
+		}
+
+		.menu-icon {
+			width: 18px;
+			height: 18px;
+			opacity: 0.7;
+			transition: all 0.2s ease;
+			flex-shrink: 0;
+		}
+
+		&.mute-toggle {
+			font-weight: 500;
+
+			&.muted {
+				color: #dc2626;
+
+				&:hover {
+					background-color: rgba(220, 38, 38, 0.06);
+				}
+
+				.menu-icon {
+					stroke: #dc2626;
+				}
+			}
+		}
+	}
+
+	&.closing {
+		animation: fadeOut 0.2s ease-out forwards;
+	}
+}
+
+@keyframes fadeOut {
+	from {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-8px) scale(0.95);
+	}
+}
+
+/* ミュートアイコン用のスタイル */
+.channel-item {
+	.mute-icon {
+		display: inline-flex;
+		align-items: center;
+		margin-left: 8px;
+
+		img {
+			width: 16px;
+			height: 16px;
+			opacity: 0.6;
+			transition: opacity 0.2s ease;
+		}
+
+		&:hover img {
+			opacity: 0.8;
+		}
+	}
+
+	&.muted {
+		opacity: 0.7;
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+// チャットページ内の chat-icon のみに適用（ヘッダーは除外）
+.chat-main .chat-icon,
+.channel-list .chat-icon,
+.chat-container .chat-icon {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+
+	.unread-badge {
+		position: absolute;
+		top: -8px;
+		right: -8px;
+		background-color: #ff4757;
+		color: white;
+		font-size: 12px;
+		font-weight: 600;
+		padding: 2px 6px;
+		border-radius: 10px;
+		min-width: 20px;
+		height: 20px;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		animation: fadeIn 0.3s ease-out;
+		box-shadow: 0 2px 4px rgba(255, 71, 87, 0.2);
+
+		&.visible {
+			display: flex;
+		}
+	}
+}
+
+.notification-permission-prompt {
+	position: absolute;
+	right: 20px;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1000;
+	background: #fff;
+	padding: 8px 12px;
+	border-radius: 6px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	display: none;
+
+	&.visible {
+		display: block !important;
+	}
+
+	.enable-notifications {
+		display: inline-flex !important;
+		align-items: center;
+		gap: 8px;
+		background-color: #007bff;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		padding: 8px 16px;
+		cursor: pointer;
+		font-size: 14px;
+		font-weight: 500;
+		white-space: nowrap;
+		min-width: 200px;
+
+		img {
+			width: 16px;
+			height: 16px;
+			object-fit: contain;
+		}
+
+		span {
+			color: white;
+			line-height: 1;
+		}
+
+		&:hover {
+			background-color: #0056b3;
+		}
+	}
+}
+
+.message-loader {
+	padding: 10px;
+	text-align: center;
+	color: #666;
+	font-size: 0.9em;
+	background: rgba(255, 255, 255, 0.8);
+	border-radius: 4px;
+	margin: 10px auto;
+	width: fit-content;
+	animation: fadeIn 0.3s ease-in-out;
+}
+
+.no-more-messages {
+	text-align: center;
+	background-color: rgba(var(--gray-rgb), 0.1);
+	color: var(--text-muted);
+	padding: 6px 10px;
+	border-radius: 8px;
+	margin: 10px auto;
+	font-size: 12px;
+	max-width: 200px;
+}
+
+.loading-indicator {
+	padding: 12px;
+	text-align: center;
+	color: #0066ff;
+	font-size: 0.9rem;
+	margin: 8px 0;
+	background-color: #e6f7ff;
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 60px;
+
+	span,
+	p {
+		margin: 0;
+		padding: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+	}
+
+	img,
+	svg {
+		margin-bottom: 8px;
+	}
+}
+
+/* スレッドパネルの日付セパレーター用スタイル */
+.thread-messages .date-separator {
+	text-align: center;
+	padding: 10px 0;
+	margin: 5px 0;
+	color: #6c757d;
+	font-size: 0.85rem;
+	position: relative;
+}
+
+.thread-messages .date-separator:before,
+.thread-messages .date-separator:after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	width: 30%;
+	height: 1px;
+	background-color: #dee2e6;
+}
+
+.thread-messages .date-separator:before {
+	left: 5%;
+}
+
+.thread-messages .date-separator:after {
+	right: 5%;
+}
+
+.thread-parent-user .message-time {
+	font-size: 0.85em;
+	color: #777;
+	margin-left: 8px;
+}
+
+.thread-message .message-time {
+	font-size: 0.85em;
+	color: #777;
+}
+
+/* スレッドパネルの閉じるボタン */
+.thread-close-button {
+	position: absolute;
+	top: 78px;
+	right: 10px;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	background-color: #f0f2f5;
+	border: none;
+	font-size: 18px;
+	font-weight: bold;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	z-index: 10;
+	transition: background-color 0.2s;
+
+	&:hover {
+		background-color: #e4e6eb;
+	}
+
+	&:active {
+		background-color: #d8dadf;
+	}
+}
+
+/* スレッドヘッダーのスタイル調整（閉じるボタン用） */
+.thread-header {
+	position: relative;
+	padding-right: 40px; /* 閉じるボタン用のスペース確保 */
+}
+
+.action-button {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: background-color 0.2s;
+
+	&:hover {
+		background-color: rgba(0, 0, 0, 0.05);
+	}
+
+	img {
+		width: 20px;
+		height: 20px;
+	}
+}
+
+.message-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.chat-message:hover .message-actions,
+.thread-message:hover .message-actions {
+	opacity: 1;
+}
+
+@keyframes highlightNewMessage {
+	0% {
+		background-color: rgba(0, 102, 255, 0.1);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+.new-messages-indicator {
+	position: absolute;
+	bottom: 100px;
+	right: 20px;
+	background-color: #0066ff;
+	color: white;
+	padding: 8px 12px;
+	border-radius: 20px;
+	font-size: 0.85rem;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	cursor: pointer;
+	opacity: 0;
+	transform: translateY(20px);
+	transition: opacity 0.3s, transform 0.3s;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+
+	&.visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	.indicator-icon {
+		width: 16px;
+		height: 16px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		svg {
+			width: 100%;
+			height: 100%;
+		}
+	}
+}
+
+/* 接続ステータス表示 */
+#connection-status {
+	font-size: 12px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	margin-left: 10px;
+	display: inline-block;
+
+	&.connecting {
+		background-color: #ffeeba;
+		color: #856404;
+	}
+
+	&.connected {
+		background-color: #d4edda;
+		color: #155724;
+	}
+
+	&.polling {
+		background-color: #d1ecf1;
+		color: #0c5460;
+	}
+}
+
+.chat-main-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+
+	.header-left {
+		display: flex;
+		align-items: center;
+	}
+}
+
+/* 日付セパレーターメニュー */
+.date-separator {
+	position: relative;
+	cursor: pointer;
+
+	&:hover {
+		.date-text {
+			background-color: #e7f1ff;
+			color: #0066ff;
+		}
+	}
+}
+
+.date-menu {
+	position: absolute;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 100;
+	min-width: 200px;
+	padding: 8px 0;
+	display: none;
+	animation: fadeIn 0.2s ease-out;
+
+	&.menu-down {
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		margin-top: 8px;
+
+		&::before {
+			content: '';
+			position: absolute;
+			top: -8px;
+			left: 50%;
+			transform: translateX(-50%);
+			border-left: 8px solid transparent;
+			border-right: 8px solid transparent;
+			border-bottom: 8px solid white;
+		}
+	}
+
+	&.menu-up {
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		margin-bottom: 8px;
+
+		&::before {
+			content: '';
+			position: absolute;
+			bottom: -8px;
+			left: 50%;
+			transform: translateX(-50%);
+			border-left: 8px solid transparent;
+			border-right: 8px solid transparent;
+			border-top: 8px solid white;
+		}
+	}
+
+	&.menu-right {
+		left: calc(100% + 8px);
+		top: 50%;
+		transform: translateY(-50%);
+
+		&::before {
+			content: '';
+			position: absolute;
+			left: -8px;
+			top: 50%;
+			transform: translateY(-50%);
+			border-top: 8px solid transparent;
+			border-bottom: 8px solid transparent;
+			border-right: 8px solid white;
+		}
+	}
+
+	&.menu-left {
+		right: calc(100% + 8px);
+		top: 50%;
+		transform: translateY(-50%);
+
+		&::before {
+			content: '';
+			position: absolute;
+			right: -8px;
+			top: 50%;
+			transform: translateY(-50%);
+			border-top: 8px solid transparent;
+			border-bottom: 8px solid transparent;
+			border-left: 8px solid white;
+		}
+	}
+
+	&.show {
+		display: block;
+	}
+
+	.menu-item {
+		padding: 8px 16px;
+		color: #1a1f36;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		font-size: 0.95rem;
+		text-align: left;
+
+		&:hover {
+			background-color: #f0f2f5;
+		}
+
+		&.active {
+			background-color: #e7f1ff;
+			color: #0066ff;
+		}
+
+		&.pick-date {
+			border-top: 1px solid #edf0f2;
+			margin-top: 8px;
+			padding-top: 8px;
+		}
+	}
+}
+
+/* Date Picker スタイル */
+.date-picker-container {
+	padding: 12px;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	position: fixed;
+	z-index: 1000;
+	display: none;
+
+	&.show {
+		display: block;
+	}
+
+	.flatpickr-calendar {
+		box-shadow: none !important;
+		margin: 0 !important;
+		width: 280px !important;
+		font-size: 14px;
+		background: transparent;
+
+		&::before,
+		&::after {
+			display: none !important;
+		}
+
+		.flatpickr-months {
+			margin-bottom: 8px;
+			.flatpickr-month {
+				height: 36px;
+			}
+			.flatpickr-current-month {
+				padding: 0;
+				font-size: 14px;
+			}
+		}
+
+		.flatpickr-weekdays {
+			height: 28px;
+			.flatpickr-weekday {
+				font-size: 12px;
+			}
+		}
+
+		.flatpickr-days {
+			width: 280px !important;
+			.dayContainer {
+				width: 280px;
+				min-width: 280px;
+				max-width: 280px;
+			}
+			.flatpickr-day {
+				height: 36px;
+				line-height: 36px;
+				border-radius: 4px;
+				margin: 2px;
+				width: calc(100% / 7 - 4px);
+
+				&:hover {
+					background: #e7f1ff;
+				}
+
+				&.selected {
+					background: #0066ff;
+					border-color: #0066ff;
+					color: white;
+				}
+
+				&.today {
+					border-color: #0066ff;
+					color: #0066ff;
+					font-weight: bold;
+				}
+			}
+		}
+	}
+}
+
+.search-options-panel {
+	position: absolute;
+	top: 40px;
+	right: 0;
+	width: 280px;
+	padding: 12px;
+	background-color: var(--background-card, #fff);
+	border: 1px solid var(--border-color, #dcdcdc);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	display: none;
+
+	@media (max-width: 576px) {
+		width: 260px;
+		right: -10px;
+	}
+
+	.hasDatepicker {
+		width: 100%;
+		z-index: 1001;
+	}
+
+	.search-option-buttons {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 12px;
+		padding-top: 8px;
+		border-top: 1px solid var(--border-light, #f0f0f0);
+
+		.reset-search-options {
+			background-color: #f0f0f0;
+			color: #333;
+			border: none;
+			border-radius: 4px;
+			padding: 6px 12px;
+			font-size: 13px;
+			cursor: pointer;
+			transition: background-color 0.2s;
+
+			&:hover {
+				background-color: #e0e0e0;
+			}
+		}
+	}
+}
+
+#ui-datepicker-div {
+	display: none !important;
+	visibility: hidden !important;
+	z-index: 10000 !important; // 最も高いz-indexを設定
+	background: white;
+	border: 1px solid #dcdcdc;
+	border-radius: 8px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+	padding: 8px;
+	font-size: 14px;
+	width: 280px; // 少し幅を広げる
+
+	.ui-datepicker-header {
+		background: none;
+		border: none;
+		border-bottom: 1px solid #eee;
+		padding-bottom: 5px;
+		margin-bottom: 5px;
+	}
+
+	.ui-datepicker-title {
+		font-weight: 600;
+		font-size: 14px;
+	}
+
+	.ui-datepicker-prev,
+	.ui-datepicker-next {
+		top: 5px;
+	}
+
+	.ui-datepicker-calendar {
+		margin-bottom: 0;
+		border-collapse: separate;
+		border-spacing: 0;
+		width: 100%;
+
+		th {
+			font-size: 12px;
+			color: #666;
+			padding: 4px;
+			width: 14.28%; // 7日間を均等に
+			text-align: center;
+		}
+
+		td {
+			padding: 1px;
+			text-align: center;
+			width: 14.28%; // 7日間を均等に
+			height: 30px; // 高さを固定
+
+			a,
+			span {
+				text-align: center;
+				border-radius: 4px;
+				padding: 5px 0;
+				background: none;
+				border: none;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 30px; // セル内の日付表示幅を固定
+				height: 30px; // セル内の日付表示高さを固定
+				margin: 0 auto;
+				box-sizing: border-box;
+
+				&.ui-state-default {
+					background: none;
+					border: none;
+					color: #333;
+				}
+
+				&.ui-state-highlight {
+					background-color: #f5f5f5;
+					color: #0066ff;
+				}
+
+				&.ui-state-active {
+					background-color: #0066ff;
+					color: white;
+				}
+
+				&:hover {
+					background-color: #e7f1ff;
+				}
+			}
+		}
+	}
+
+	.ui-datepicker-month,
+	.ui-datepicker-year {
+		font-weight: 600;
+		padding: 2px 4px;
+		margin: 0 2px;
+		border: 1px solid #dcdcdc;
+		border-radius: 4px;
+	}
+}
+
+#search-date-from:focus,
+#search-date-to:focus {
+	border-color: #0066ff;
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
+}
+
+.date-picker-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 999;
+	display: none;
+
+	&.show {
+		display: block;
+	}
+}
+
+/**
+ * チャット検索機能のスタイル
+ * - チャット検索機能のUIスタイル
+ * - 検索結果の表示
+ * - 検索履歴の管理
+ * - 検索結果のハイライト
+ */
+
+.chat-search-container {
+	position: relative;
+	margin-bottom: 0; // 上下中央配置のためmargin-bottomを0に
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	margin-right: 10px;
+	align-self: center; // 追加: 上下中央揃え
+
+	@media (max-width: 576px) {
+		margin-right: 5px;
+	}
+}
+
+.chat-search-form {
+	display: flex;
+	align-items: center;
+}
+
+.chat-search-input-wrap,
+.search-input-wrapper {
+	position: relative;
+	flex-grow: 1;
+}
+
+#chat-search-input,
+.chat-search-input {
+	width: 200px;
+	height: 32px;
+	padding: 5px 10px 5px 35px; // 左側のパディングを増やして虫眼鏡のスペースを確保
+	border: 1px solid var(--border-color, #dcdcdc);
+	border-radius: 16px;
+	background-color: var(--background-light, #f5f5f5);
+	font-size: 14px;
+	transition: width 0.3s, box-shadow 0.3s;
+
+	&:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.3);
+		width: 220px;
+		border-color: #0071a1;
+	}
+
+	@media (max-width: 768px) {
+		width: 150px;
+
+		&:focus {
+			width: 180px;
+		}
+	}
+
+	@media (max-width: 576px) {
+		width: 120px;
+
+		&:focus {
+			width: 150px;
+		}
+	}
+}
+
+.chat-search-button,
+#chat-search-button {
+	position: absolute !important;
+	left: 10px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	background: none !important;
+	border: none !important;
+	padding: 0 !important;
+	cursor: pointer !important;
+	color: var(--text-muted, #666) !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	height: 20px !important;
+	width: 20px !important;
+	min-width: 20px !important;
+	line-height: 1 !important;
+	z-index: 2 !important; // 他の要素より前面に表示
+	opacity: 1 !important;
+	visibility: visible !important;
+	pointer-events: auto !important;
+
+	&:hover {
+		color: var(--text-primary, #333) !important;
+	}
+
+	svg {
+		vertical-align: middle !important;
+		width: 16px !important;
+		height: 16px !important;
+		opacity: 0.8 !important;
+
+		&:hover {
+			opacity: 1 !important;
+		}
+	}
+}
+
+.chat-search-options-button {
+	background: none;
+	border: none;
+	padding: 6px;
+	margin-left: 4px;
+	cursor: pointer;
+	color: var(--text-muted, #666);
+	border-radius: 4px;
+	position: relative;
+
+	&:hover {
+		background-color: var(--background-hover, #eaeaea);
+		color: var(--text-primary, #333);
+	}
+
+	svg {
+		width: 20px;
+		height: 20px;
+	}
+}
+
+.search-history-container {
+	position: absolute;
+	top: 35px;
+	left: 0;
+	width: 220px;
+	max-height: 300px;
+	overflow-y: auto;
+	background-color: var(--background-card, #fff);
+	border: 1px solid var(--border-color, #dcdcdc);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	display: none;
+}
+
+.search-history-item {
+	display: flex;
+	align-items: center;
+	padding: 8px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #eee;
+
+	&:hover {
+		background-color: var(--background-hover, #f0f0f0);
+	}
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+.history-icon {
+	margin-right: 8px;
+	color: var(--text-muted, #777);
+	flex-shrink: 0;
+}
+
+.history-query {
+	flex: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-size: 14px;
+}
+
+.remove-history-item {
+	background: none;
+	border: none;
+	padding: 2px 4px 0px 8px;
+	font-size: 18px;
+	color: var(--text-muted, #999);
+	cursor: pointer;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+
+	&:hover {
+		color: var(--text-danger, #d32f2f);
+		background-color: #eee;
+	}
+}
+
+.search-options-panel {
+	position: absolute;
+	top: 40px;
+	right: 0;
+	width: 280px;
+	padding: 12px;
+	background-color: var(--background-card, #fff);
+	border: 1px solid var(--border-color, #dcdcdc);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	display: none;
+
+	@media (max-width: 576px) {
+		width: 260px;
+		right: -10px;
+	}
+
+	.hasDatepicker {
+		width: 100%;
+		z-index: 1001;
+	}
+}
+
+.search-option {
+	margin-bottom: 12px;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	label {
+		display: block;
+		margin-bottom: 5px;
+		font-weight: 500;
+		color: var(--text-primary, #333);
+		font-size: 14px;
+	}
+
+	select,
+	input {
+		width: 100%;
+		padding: 8px;
+		border: 1px solid var(--border-color, #dcdcdc);
+		border-radius: 4px;
+		background-color: var(--background-light, #f5f5f5);
+		font-size: 14px;
+	}
+}
+
+.date-range-option {
+	border-top: 1px solid #eee;
+	padding-top: 10px;
+}
+
+.date-range-inputs {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+
+	input {
+		flex: 1;
+		min-width: 100px;
+		padding: 8px;
+		border: 1px solid var(--border-color, #dcdcdc);
+		border-radius: 4px;
+		background-color: var(--background-light, #f5f5f5);
+		font-size: 14px;
+		margin-bottom: 4px;
+		width: calc(50% - 10px);
+	}
+
+	span {
+		margin: 0 10px;
+		color: var(--text-muted, #666);
+	}
+}
+
+.search-results-modal,
+#search-results-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+	z-index: 1000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+}
+
+.search-results-modal > div,
+.search-results-container {
+	width: 90%;
+	max-width: 700px;
+	max-height: 80vh;
+	background-color: var(--background-card, #fff);
+	border-radius: 8px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+
+	@media (max-width: 768px) {
+		width: 95%;
+		max-width: none;
+		max-height: 90vh;
+	}
+}
+
+.search-results-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 15px 20px;
+	border-bottom: 1px solid var(--border-color, #dcdcdc);
+	background: #f9f9f9;
+
+	h3 {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 600;
+	}
+}
+
+.search-results-title {
+	font-weight: bold;
+	font-size: 18px;
+}
+
+.search-query {
+	font-weight: bold;
+	color: var(--text-primary, #333);
+
+	.result-count {
+		margin-left: 5px;
+		font-weight: normal;
+		color: var(--text-muted, #666);
+	}
+}
+
+.close-search-results {
+	background: none;
+	border: none;
+	font-size: 28px;
+	color: var(--text-muted, #666);
+	cursor: pointer;
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	padding: 0;
+	margin: -8px;
+
+	&:hover {
+		color: var(--text-danger, #d32f2f);
+		background-color: #eee;
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.3);
+	}
+}
+
+.search-results-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 0;
+	max-height: calc(90vh - 70px); /* ヘッダーの高さを引いたサイズ */
+	scroll-behavior: smooth;
+	overscroll-behavior: contain; /* バウンス効果を抑える */
+	-webkit-overflow-scrolling: touch; /* iOS でのスムーズスクロール */
+
+	/* スクロールバーのスタイル */
+	&::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: rgba(0, 0, 0, 0.03);
+		border-radius: 4px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: rgba(0, 0, 0, 0.15);
+		border-radius: 4px;
+
+		&:hover {
+			background: rgba(0, 0, 0, 0.25);
+		}
+	}
+}
+
+.search-results-content {
+	padding: 15px;
+}
+
+.search-results-list {
+	padding: 10px 20px 70px; /* 下部に余白を追加して最後の項目も見やすく */
+
+	&.list-style-display {
+		display: flex;
+		flex-direction: column;
+		gap: 10px; /* 項目間の間隔を統一 */
+	}
+}
+
+.search-results-empty {
+	padding: 30px;
+	text-align: center;
+	color: var(--text-muted, #666);
+	font-style: italic;
+}
+
+.search-results-loading {
+	padding: 20px;
+	text-align: center;
+
+	.spinner {
+		display: inline-block;
+		width: 30px;
+		height: 30px;
+		border: 3px solid rgba(0, 0, 0, 0.1);
+		border-radius: 50%;
+		border-top-color: var(--primary-color, #007bff);
+		animation: spin 1s ease-in-out infinite;
+		margin-bottom: 10px;
+	}
+
+	p {
+		color: var(--text-muted, #666);
+		font-size: 14px;
+		margin-top: 8px;
+	}
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.search-result-item {
+	margin-bottom: 10px;
+	padding: 12px 15px;
+	border: 1px solid var(--border-color, #e0e0e0);
+	border-radius: 8px;
+	transition: background-color 0.2s, transform 0.1s;
+	background-color: var(--background-light, #f8f8f8);
+	cursor: pointer;
+	border-bottom: 1px solid #eee;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+
+	&:hover {
+		background-color: var(--background-hover, #f0f0f0);
+		transform: translateY(-2px);
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+	}
+
+	animation: fadeInItem 0.3s forwards;
+	opacity: 0;
+	transform: translateY(10px);
+}
+
+@keyframes fadeInItem {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.result-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+	color: #666;
+	font-size: 12px;
+}
+
+.result-channel {
+	display: flex;
+	align-items: center;
+	font-weight: 500;
+	color: var(--text-primary, #444);
+	padding: 2px 6px;
+	border-radius: 3px;
+
+	.channel-icon {
+		margin-right: 6px;
+		width: 14px;
+		height: 14px;
+		display: inline-block;
+		vertical-align: middle;
+	}
+}
+
+.result-time {
+	font-size: 12px;
+	color: var(--text-muted, #666);
+	background-color: rgba(0, 0, 0, 0.03);
+	padding: 2px 5px;
+	border-radius: 3px;
+	white-space: nowrap;
+}
+
+.result-user {
+	margin-bottom: 8px;
+	font-weight: 500;
+	font-size: 14px;
+	display: inline-block;
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: var(--text-accent, #2979ff);
+}
+
+.result-content {
+	margin-bottom: 10px;
+	line-height: 1.5;
+	word-break: break-word;
+
+	a {
+		color: var(--link-color, #2979ff);
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+
+	strong {
+		font-weight: bold;
+		background-color: rgba(255, 255, 0, 0.3);
+		padding: 0 2px;
+		border-radius: 2px;
+		box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+		color: #000;
+	}
+}
+
+.result-attachments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+	margin-bottom: 10px;
+}
+
+.result-attachment {
+	display: flex;
+	align-items: center;
+	padding: 4px 8px;
+	background-color: var(--background-light, #f5f5f5);
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+.attachment-icon {
+	margin-right: 5px;
+	color: var(--text-muted, #666);
+}
+
+.attachment-name {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 150px;
+}
+
+.result-thread-info {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 5px;
+	color: var(--text-muted, #666);
+	font-size: 12px;
+	color: #0071a1;
+}
+
+.thread-count-icon {
+	color: var(--text-muted, #666);
+	margin-right: 5px;
+}
+
+.highlight-message {
+	position: relative;
+	z-index: 2;
+	animation: highlight 3s ease-out;
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(231, 241, 255, 0.8);
+		border-radius: 8px;
+		z-index: -1;
+		animation: highlight-pulse 2s ease-out;
+	}
+}
+
+@keyframes highlight {
+	0% {
+		background-color: rgba(231, 241, 255, 0.9);
+	}
+	70% {
+		background-color: rgba(231, 241, 255, 0.3);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+@keyframes highlight-pulse {
+	0% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	70% {
+		transform: scale(1.02);
+		opacity: 0.7;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 0;
+	}
+}
+
+@keyframes highlight-fade {
+	0%,
+	20% {
+		background-color: rgba(255, 243, 148, 0.5);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+.parent-message-highlight {
+	background-color: rgba(76, 175, 80, 0.2) !important;
+	border-left: 4px solid #4caf50 !important;
+	box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3) !important;
+	animation: parent-pulse 2s ease-in-out;
+}
+
+@keyframes parent-pulse {
+	0%,
+	100% {
+		background-color: rgba(76, 175, 80, 0.2);
+		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+	}
+	50% {
+		background-color: rgba(76, 175, 80, 0.4);
+		box-shadow: 0 4px 12px rgba(76, 175, 80, 0.5);
+	}
+}
+
+.thread-message-highlight,
+[data-message-id].thread-message-highlight,
+.thread-message.thread-message-highlight,
+.chat-message.thread-message-highlight,
+.message.thread-message-highlight {
+	background-color: rgba(255, 235, 59, 0.25) !important;
+	border-left: 3px solid rgba(255, 193, 7, 0.8) !important;
+	box-shadow: 0 0 20px rgba(255, 235, 59, 0.5) !important;
+	transition: all 0.3s ease !important;
+	position: relative !important;
+}
+
+.chat-error-message {
+	background: #f8d7da;
+	color: #721c24;
+	padding: 8px 12px;
+	margin-bottom: 10px;
+	border-radius: 4px;
+	font-size: 14px;
+}
+
+@media (min-width: 768px) {
+	.search-results-modal,
+	.search-results-container,
+	.search-results-body,
+	.search-result-item {
+		transform: translateZ(0);
+		will-change: transform;
+		backface-visibility: hidden;
+	}
+}
+
+.search-result-item {
+	animation: fadeInItem 0.3s forwards;
+	opacity: 0;
+	transform: translateY(10px);
+}
+
+@keyframes fadeInItem {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@for $i from 1 through 20 {
+	.search-result-item:nth-child(#{$i}) {
+		animation-delay: #{$i * 0.05}s;
+	}
+}
+
+.no-more-messages {
+	text-align: center;
+	background-color: rgba(var(--gray-rgb), 0.1);
+	color: var(--text-muted);
+	padding: 6px 10px;
+	border-radius: 8px;
+	margin: 10px auto;
+	font-size: 12px;
+	max-width: 200px;
+}
+
+.error-message {
+	background-color: rgba(var(--danger-rgb), 0.1);
+	color: var(--danger-color);
+	padding: 6px 10px;
+	border-radius: 8px;
+	margin: 10px auto;
+	text-align: center;
+	font-size: 13px;
+	max-width: 200px;
+}
+
+.temp-error {
+	position: relative;
+	animation: slideInFromTop 0.3s ease-out, fadeOutDown 0.3s ease-in 2.7s forwards;
+	background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+	border: 1px solid #ffc107;
+	color: #856404;
+	box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+
+	&::before {
+		content: '⚠️';
+		margin-right: 8px;
+	}
+
+	&.no-messages {
+		background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+		border-color: #2196f3;
+		color: #0d47a1;
+
+		&::before {
+			content: '📅';
+		}
+	}
+
+	&.error-message {
+		background: linear-gradient(135deg, #ffebee, #ffcdd2);
+		border-color: #f44336;
+		color: #c62828;
+
+		&::before {
+			content: '❌';
+		}
+	}
+}
+
+@keyframes slideInFromTop {
+	from {
+		opacity: 0;
+		transform: translateY(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeOutDown {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+}
+
+#scroll-lock-indicator {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: rgba(0, 0, 0, 0.7);
+	color: white;
+	padding: 8px 16px;
+	border-radius: 50px;
+	font-size: 14px;
+	z-index: 9999;
+	display: flex;
+	align-items: center;
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+
+	&:before {
+		content: '';
+		width: 14px;
+		height: 14px;
+		margin-right: 8px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-radius: 50%;
+		border-top-color: white;
+		animation: spin 0.8s linear infinite;
+		display: inline-block;
+	}
+}
+
+.chat-messages-container.scroll-locked,
+#chat-messages.scroll-locked {
+	position: relative;
+
+	&:after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(255, 255, 255, 0.1);
+		z-index: 1000;
+		pointer-events: none;
+	}
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.date-separator.highlight-separator {
+	animation: highlight-flash 1.5s ease-in-out;
+}
+
+@keyframes highlight-flash {
+	0%,
+	100% {
+		background-color: transparent;
+	}
+	50% {
+		background-color: rgba(var(--primary-rgb), 0.15);
+	}
+}
+.scroll-hint {
+	position: absolute;
+	bottom: 10px;
+	left: 0;
+	right: 0;
+	text-align: center;
+	color: #0066ff;
+	font-weight: bold;
+	background: rgba(255, 255, 255, 0.9);
+	padding: 8px 0;
+	z-index: 100;
+	box-shadow: 0 -4px 10px rgba(0, 102, 255, 0.2);
+	animation: fadeIn 0.3s forwards;
+}
+
+.parent-message-body {
+	padding: 0 20px 15px;
+	overflow-y: auto;
+	flex: 1;
+	position: relative;
+	// スクロールバーをカスタマイズして視認性を向上
+	&::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: rgba(0, 0, 0, 0.03);
+		border-radius: 3px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: rgba(0, 0, 0, 0.15);
+		border-radius: 3px;
+
+		&:hover {
+			background: rgba(0, 0, 0, 0.25);
+		}
+	}
+
+	// スクロールインジケーター - 右下に配置
+	&::before {
+		content: '';
+		position: absolute;
+		bottom: 15px;
+		left: auto; // 左の位置設定を解除
+		right: 15px; // 右下に配置
+		width: 30px;
+		height: 30px;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 13l5 5 5-5'/%3E%3Cpath d='M7 6l5 5 5-5'/%3E%3C/svg%3E");
+		background-size: contain;
+		background-position: center;
+		background-repeat: no-repeat;
+		background-color: rgba(255, 255, 255, 0.9);
+		border-radius: 50%;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+		opacity: 0;
+		transition: opacity 0.3s ease, transform 0.3s ease;
+		z-index: 10;
+		transform: translateY(10px);
+		pointer-events: none;
+		display: block; // 確実に表示されるように
+	}
+
+	// スクロール可能な場合に下部にグラデーションを表示
+	&::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 60px;
+		background: linear-gradient(
+			to bottom,
+			rgba(248, 249, 250, 0) 0%,
+			rgba(248, 249, 250, 0.8) 50%,
+			rgba(248, 249, 250, 1) 100%
+		);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		z-index: 2;
+	}
+
+	// スクロール可能な場合にインジケーターとグラデーションを表示
+	&.scrollable {
+		&::before {
+			opacity: 0.8;
+			transform: translateY(0);
+			animation: scroll-hint 2s ease-in-out infinite;
+		}
+
+		&::after {
+			opacity: 1;
+		}
+	}
+
+	// ユーザーがスクロールを始めたらインジケーターとグラデーションを非表示
+	&.scrolling {
+		&::before {
+			opacity: 0;
+			transform: translateY(10px);
+			animation: none;
+			transition: opacity 0.2s ease, transform 0.2s ease;
+		}
+
+		&::after {
+			opacity: 0;
+			transition: opacity 0.2s ease;
+		}
+	}
+}
+
+@keyframes scroll-hint {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(5px);
+	}
+}
+
+.thread-panel {
+	.parent-message-body {
+		// スクロールインジケーター - 右下に配置
+		&::before {
+			content: '';
+			position: absolute;
+			bottom: 15px;
+			right: 15px;
+			width: 30px;
+			height: 30px;
+			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 13l5 5 5-5'/%3E%3Cpath d='M7 6l5 5 5-5'/%3E%3C/svg%3E");
+			background-size: contain;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-color: rgba(255, 255, 255, 0.9);
+			border-radius: 50%;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+			opacity: 0;
+			transition: opacity 0.3s ease, transform 0.3s ease;
+			z-index: 1005; // 高い値で確実に表示
+			transform: translateY(10px);
+			pointer-events: none;
+			display: block;
+		}
+
+		// グラデーション - 下部に配置
+		&::after {
+			content: '';
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			height: 60px;
+			background: linear-gradient(
+				to bottom,
+				rgba(248, 249, 250, 0) 0%,
+				rgba(248, 249, 250, 0.8) 50%,
+				rgba(248, 249, 250, 1) 100%
+			);
+			pointer-events: none;
+			opacity: 0;
+			transition: opacity 0.3s ease;
+			z-index: 1004;
+		}
+
+		&.scrollable::before {
+			opacity: 0.8;
+			transform: translateY(0);
+			animation: scroll-hint 2s ease-in-out infinite;
+		}
+
+		// スクロール可能な場合に下部にグラデーションを表示
+		&.scrollable::after {
+			opacity: 1;
+		}
+
+		// スクロール中はインジケーターを非表示
+		&.scrolling::before {
+			opacity: 0 !important;
+			transform: translateY(10px);
+			animation: none !important;
+		}
+
+		// スクロール中はグラデーションも非表示
+		&.scrolling::after {
+			opacity: 0 !important;
+		}
+	}
+}
+
+.chat-debug-panel {
+	position: fixed !important;
+	top: 20px !important;
+	right: 20px !important;
+	width: 480px !important;
+	max-height: 90vh !important;
+	background-color: rgba(0, 0, 0, 0.95) !important;
+	color: #fff !important;
+	border-radius: 8px !important;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+	z-index: 10000 !important;
+	overflow-y: auto !important;
+	font-family: 'Courier New', monospace !important;
+	font-size: 12px !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+
+	.debug-panel-header {
+		display: flex !important;
+		justify-content: space-between !important;
+		align-items: center !important;
+		padding: 12px 15px !important;
+		background-color: rgba(0, 0, 0, 0.8) !important;
+		border-bottom: 1px solid rgba(0, 170, 255, 0.3) !important;
+		border-radius: 8px 8px 0 0 !important;
+
+		h3 {
+			margin: 0 !important;
+			font-size: 14px !important;
+			font-weight: bold !important;
+			color: #0af !important;
+		}
+	}
+
+	.debug-panel-controls {
+		display: flex !important;
+		align-items: center !important;
+		gap: 8px !important;
+	}
+
+	.debug-panel-help,
+	.debug-panel-close {
+		background: none !important;
+		border: 1px solid rgba(0, 170, 255, 0.5) !important;
+		color: #0af !important;
+		font-size: 12px !important;
+		width: 24px !important;
+		height: 24px !important;
+		line-height: 20px !important;
+		text-align: center !important;
+		border-radius: 4px !important;
+		cursor: pointer !important;
+		opacity: 0.7 !important;
+		transition: opacity 0.2s, background-color 0.2s !important;
+
+		&:hover {
+			opacity: 1 !important;
+			background-color: rgba(0, 170, 255, 0.2) !important;
+		}
+	}
+
+	.debug-panel-close {
+		color: #ff6b6b !important;
+		border-color: rgba(255, 107, 107, 0.5) !important;
+
+		&:hover {
+			background-color: rgba(255, 107, 107, 0.2) !important;
+		}
+	}
+
+	.debug-panel-content {
+		padding: 15px !important;
+	}
+
+	.debug-section {
+		margin-bottom: 20px !important;
+
+		h4 {
+			margin: 0 0 10px 0 !important;
+			font-size: 13px !important;
+			color: #0af !important;
+			border-bottom: 1px solid rgba(0, 170, 255, 0.2) !important;
+			padding-bottom: 5px !important;
+		}
+	}
+
+	.debug-info-grid {
+		display: grid !important;
+		gap: 8px !important;
+	}
+
+	.debug-info-item {
+		display: flex !important;
+		justify-content: space-between !important;
+		align-items: center !important;
+		padding: 4px 8px !important;
+		background-color: rgba(255, 255, 255, 0.05) !important;
+		border-radius: 4px !important;
+	}
+
+	.info-label {
+		color: #ccc !important;
+		font-weight: bold !important;
+		min-width: 120px !important;
+	}
+
+	.info-value {
+		color: #fff !important;
+		font-family: monospace !important;
+
+		&.connected {
+			color: #4ade80 !important;
+		}
+
+		&.disconnected {
+			color: #f87171 !important;
+		}
+
+		&.status-warning {
+			color: #fbbf24 !important;
+		}
+	}
+
+	.debug-connection-status,
+	.debug-channel-info,
+	.debug-connection-details,
+	.debug-event-stats,
+	.debug-performance-info,
+	.debug-error-info {
+		.status-item {
+			display: flex !important;
+			justify-content: space-between !important;
+			align-items: center !important;
+			padding: 4px 8px !important;
+			background-color: rgba(255, 255, 255, 0.05) !important;
+			border-radius: 4px !important;
+			margin-bottom: 4px !important;
+
+			&:last-child {
+				margin-bottom: 0 !important;
+			}
+		}
+
+		.status-label {
+			color: #ccc !important;
+			font-weight: bold !important;
+			min-width: 140px !important;
+		}
+
+		.status-value {
+			color: #fff !important;
+			font-family: monospace !important;
+
+			&.status-success {
+				color: #4ade80 !important;
+			}
+
+			&.status-warning {
+				color: #fbbf24 !important;
+			}
+
+			&.status-error {
+				color: #f87171 !important;
+			}
+
+			&.small-text {
+				font-size: 10px !important;
+				word-break: break-all !important;
+			}
+		}
+	}
+
+	.debug-actions {
+		display: flex !important;
+		flex-wrap: wrap !important;
+		gap: 8px !important;
+		margin-top: 10px !important;
+	}
+
+	.debug-action-button {
+		background: rgba(0, 170, 255, 0.2) !important;
+		border: 1px solid rgba(0, 170, 255, 0.5) !important;
+		color: #0af !important;
+		padding: 6px 12px !important;
+		border-radius: 4px !important;
+		cursor: pointer !important;
+		font-size: 11px !important;
+		transition: background-color 0.2s, opacity 0.2s !important;
+
+		&:hover {
+			background-color: rgba(0, 170, 255, 0.3) !important;
+			opacity: 1 !important;
+		}
+	}
+}
+.no-messages {
+	text-align: center;
+}
+
+// 削除確認ダイアログ
+.realtime-delete-confirm {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.6);
+	z-index: 10001;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	.dialog-content {
+		background: white;
+		border-radius: 8px;
+		padding: 20px;
+		min-width: 300px;
+		max-width: 400px;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+		.dialog-header {
+			font-size: 16px;
+			font-weight: 600;
+			margin-bottom: 15px;
+			color: #d32f2f;
+		}
+
+		.dialog-body {
+			margin-bottom: 20px;
+			color: #333;
+
+			.dialog-message-text {
+				color: #666;
+				font-size: 14px;
+			}
+		}
+
+		.dialog-actions {
+			display: flex;
+			gap: 10px;
+			justify-content: flex-end;
+
+			.cancel-btn {
+				padding: 8px 16px;
+				border: 1px solid #ddd;
+				background: white;
+				border-radius: 4px;
+				cursor: pointer;
+
+				&:hover {
+					background: #f5f5f5;
+				}
+			}
+
+			.delete-btn {
+				padding: 8px 16px;
+				border: none;
+				background: #d32f2f;
+				color: white;
+				border-radius: 4px;
+				cursor: pointer;
+				font-weight: 500;
+
+				&:hover {
+					background: #b71c1c;
+				}
+			}
+		}
+	}
+}
+
+// エラーメッセージを完全非表示（検索中・全レベル）
+.search-in-progress .error-message,
+.search-in-progress .no-messages.error,
+.search-in-progress .no-messages,
+.search-in-progress [class*='error'],
+body.search-in-progress .error-message,
+body.search-in-progress .no-messages.error,
+body.search-in-progress .no-messages,
+body.search-in-progress [class*='error'],
+#chat-messages.search-in-progress .error-message,
+#chat-messages.search-in-progress .no-messages.error,
+#chat-messages.search-in-progress .no-messages,
+#chat-messages.search-in-progress [class*='error'] {
+	display: none !important;
+	visibility: hidden !important;
+	opacity: 0 !important;
+	height: 0 !important;
+	max-height: 0 !important;
+	overflow: hidden !important;
+	position: absolute !important;
+	left: -9999px !important;
+}
+
+// 検索結果のハイライトスタイル - メッセージは通常表示、背景のみアニメーション
+html body div.chat-messages div.chat-message.search-highlight-pending,
+html body #chat-messages div.chat-message.search-highlight-pending,
+html body .chat-message.search-highlight-pending,
+div.chat-messages div.chat-message.search-highlight-pending,
+#chat-messages div.chat-message.search-highlight-pending,
+.chat-message.search-highlight-pending {
+	position: relative !important;
+	z-index: 999 !important;
+	border-radius: 8px !important;
+
+	// メッセージ内容は通常通り表示（opacityは変更しない）
+	opacity: 1 !important;
+
+	// ハイライト背景を::afterで実装してアニメーション
+	&::after {
+		content: '' !important;
+		position: absolute !important;
+		top: 0 !important;
+		left: -8px !important; // 左側を広げてメッセージとボーダーが重ならないように
+		right: 0 !important;
+		bottom: 0 !important;
+		background-color: transparent !important;
+		border-left: 4px solid transparent !important;
+		border-radius: 8px !important;
+		box-shadow: none !important;
+		pointer-events: none !important;
+		z-index: -1 !important;
+		animation: search-highlight-background-fade-in 1.5s ease-out forwards !important;
+		animation-fill-mode: forwards !important;
+		will-change: background-color, border-color, box-shadow !important;
+	}
+}
+
+html body div.chat-messages div.chat-message.search-highlight,
+html body #chat-messages div.chat-message.search-highlight,
+html body .chat-message.search-highlight,
+div.chat-messages div.chat-message.search-highlight,
+#chat-messages div.chat-message.search-highlight,
+.chat-message.search-highlight {
+	position: relative !important;
+	z-index: 999 !important;
+	border-radius: 8px !important;
+
+	// メッセージ内容は通常通り表示
+	opacity: 1 !important;
+
+	// ハイライト背景を::afterで実装してアニメーション
+	&::after {
+		content: '' !important;
+		position: absolute !important;
+		top: 0 !important;
+		left: -8px !important; // 左側を広げてメッセージとボーダーが重ならないように
+		right: 0 !important;
+		bottom: 0 !important;
+		background-color: #e7f1ff !important;
+		border-left: 4px solid #64b5f6 !important;
+		border-radius: 8px !important;
+		box-shadow: 0 4px 20px rgba(100, 181, 246, 0.4) !important;
+		pointer-events: none !important;
+		z-index: -1 !important;
+		animation: search-highlight-background-fade-out 5s ease-out 3s forwards !important;
+		animation-fill-mode: forwards !important;
+		will-change: background-color, border-color, box-shadow !important;
+	}
+
+	// パルス効果用の追加要素
+	&::before {
+		content: '' !important;
+		position: absolute !important;
+		top: -2px !important;
+		left: -12px !important; // ::afterに合わせて左側を調整
+		right: -2px !important;
+		bottom: -2px !important;
+		background: rgba(100, 181, 246, 0.1) !important;
+		border-radius: 4px !important;
+		pointer-events: none !important;
+		animation: search-highlight-pulse 2s ease-in-out infinite !important;
+		z-index: -2 !important;
+	}
+}
+
+// 背景色のみのフェードインアニメーション（メッセージ内容は影響を受けない）
+@keyframes search-highlight-background-fade-in {
+	0% {
+		background-color: transparent !important;
+		border-left-color: transparent !important;
+		box-shadow: none !important;
+	}
+	25% {
+		background-color: rgba(231, 241, 255, 0.3) !important;
+		border-left-color: rgba(100, 181, 246, 0.3) !important;
+		box-shadow: 0 1px 4px rgba(100, 181, 246, 0.1) !important;
+	}
+	50% {
+		background-color: rgba(231, 241, 255, 0.6) !important;
+		border-left-color: rgba(100, 181, 246, 0.6) !important;
+		box-shadow: 0 2px 8px rgba(100, 181, 246, 0.2) !important;
+	}
+	75% {
+		background-color: rgba(231, 241, 255, 0.8) !important;
+		border-left-color: rgba(100, 181, 246, 0.8) !important;
+		box-shadow: 0 3px 12px rgba(100, 181, 246, 0.25) !important;
+	}
+	100% {
+		background-color: #e7f1ff !important;
+		border-left-color: #64b5f6 !important;
+		box-shadow: 0 4px 16px rgba(100, 181, 246, 0.3) !important;
+	}
+}
+
+// 背景色のみのフェードアウトアニメーション（メッセージ内容は影響を受けない）
+@keyframes search-highlight-background-fade-out {
+	0% {
+		background-color: #e7f1ff !important;
+		border-left-color: #64b5f6 !important;
+		box-shadow: 0 4px 20px rgba(100, 181, 246, 0.4) !important;
+	}
+	30% {
+		background-color: #e7f1ff !important;
+		border-left-color: #64b5f6 !important;
+		box-shadow: 0 4px 20px rgba(100, 181, 246, 0.4) !important;
+	}
+	70% {
+		background-color: rgba(231, 241, 255, 0.3) !important;
+		border-left-color: rgba(100, 181, 246, 0.3) !important;
+		box-shadow: 0 2px 8px rgba(100, 181, 246, 0.1) !important;
+	}
+	100% {
+		background-color: transparent !important;
+		border-left-color: transparent !important;
+		box-shadow: none !important;
+	}
+}
+
+@keyframes search-highlight-pulse {
+	0%,
+	100% {
+		opacity: 0.1;
+	}
+	50% {
+		opacity: 0.2;
+	}
+}
+
+// スレッドメッセージのハイライトスタイル（検索結果統一デザイン）
+.thread-message.search-highlight,
+.thread-messages .thread-message.search-highlight,
+.thread-message.thread-message-highlight,
+.thread-messages .thread-message.thread-message-highlight {
+	position: relative !important;
+	z-index: 999 !important;
+	border-radius: 8px !important;
+	opacity: 1 !important;
+
+	// スレッドメッセージのハイライト背景
+	&::after {
+		content: '' !important;
+		position: absolute !important;
+		top: 0 !important;
+		left: -8px !important;
+		right: 0 !important;
+		bottom: 0 !important;
+		background-color: transparent !important;
+		border-left: 4px solid transparent !important;
+		border-radius: 8px !important;
+		box-shadow: none !important;
+		pointer-events: none !important;
+		z-index: -1 !important;
+		animation: thread-highlight-animation 4s ease-out forwards !important;
+		animation-fill-mode: forwards !important;
+		will-change: background-color, border-color, box-shadow !important;
+	}
+
+	// パルス効果
+	&::before {
+		content: '' !important;
+		position: absolute !important;
+		top: -2px !important;
+		left: -12px !important;
+		right: -2px !important;
+		bottom: -2px !important;
+		background: transparent !important;
+		border-radius: 4px !important;
+		pointer-events: none !important;
+		animation: thread-highlight-pulse 3s ease-out forwards !important;
+		z-index: -2 !important;
+	}
+}
+
+// スレッドメッセージ検索ハイライトのアニメーション（フェードイン→フェードアウト）
+@keyframes thread-highlight-animation {
+	0% {
+		background-color: transparent !important;
+		border-left-color: transparent !important;
+		box-shadow: none !important;
+	}
+	15% {
+		background-color: rgba(231, 241, 255, 0.5) !important;
+		border-left-color: rgba(100, 181, 246, 0.5) !important;
+		box-shadow: 0 2px 10px rgba(100, 181, 246, 0.2) !important;
+	}
+	30% {
+		background-color: #e7f1ff !important;
+		border-left-color: #64b5f6 !important;
+		box-shadow: 0 4px 20px rgba(100, 181, 246, 0.4) !important;
+	}
+	60% {
+		background-color: #e7f1ff !important;
+		border-left-color: #64b5f6 !important;
+		box-shadow: 0 4px 20px rgba(100, 181, 246, 0.4) !important;
+	}
+	85% {
+		background-color: rgba(231, 241, 255, 0.3) !important;
+		border-left-color: rgba(100, 181, 246, 0.3) !important;
+		box-shadow: 0 2px 8px rgba(100, 181, 246, 0.1) !important;
+	}
+	100% {
+		background-color: transparent !important;
+		border-left-color: transparent !important;
+		box-shadow: none !important;
+	}
+}
+
+// スレッドメッセージ検索ハイライトのパルスアニメーション
+@keyframes thread-highlight-pulse {
+	0% {
+		background: transparent !important;
+	}
+	15% {
+		background: rgba(100, 181, 246, 0.05) !important;
+	}
+	30% {
+		background: rgba(100, 181, 246, 0.1) !important;
+	}
+	60% {
+		background: rgba(100, 181, 246, 0.1) !important;
+	}
+	85% {
+		background: rgba(100, 181, 246, 0.05) !important;
+	}
+	100% {
+		background: transparent !important;
+	}
+}
+
+// 旧アニメーション（後方互換性のため残す）
+@keyframes thread-highlight-fade-out {
+	0% {
+		background-color: #e7f1ff !important;
+		border-left-color: #64b5f6 !important;
+		box-shadow: 0 4px 20px rgba(100, 181, 246, 0.4) !important;
+	}
+	70% {
+		background-color: rgba(231, 241, 255, 0.3) !important;
+		border-left-color: rgba(100, 181, 246, 0.3) !important;
+		box-shadow: 0 2px 8px rgba(100, 181, 246, 0.1) !important;
+	}
+	100% {
+		background-color: transparent !important;
+		border-left-color: transparent !important;
+		box-shadow: none !important;
+	}
+}
+
+// Thread panel styles
+.thread-panel {
+	visibility: hidden;
+	transition: right 0.3s ease;
+
+	&.open,
+	&.show {
+		visibility: visible;
+		right: 0 !important;
+		opacity: 1;
+		transform: translateX(0);
+	}
+
+	&.closing {
+		right: -350px;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateX(100%);
+	}
+}
+
+// Body class when thread is open
+body.thread-open {
+	.thread-panel {
+		visibility: visible;
+		right: 0 !important;
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+// Thread messages scrolling behavior
+.thread-messages {
+	&.smooth-scroll {
+		scroll-behavior: smooth;
+	}
+
+	&.auto-scroll {
+		scroll-behavior: auto;
+	}
+}
+
+// Thread input styles
+#thread-input {
+	&.has-content {
+		+ .thread-send-button {
+			opacity: 1;
+			cursor: pointer;
+
+			&:disabled {
+				opacity: 0.5;
+				cursor: default;
+			}
+		}
+	}
+}
+
+// Thread send button states
+.thread-send-button,
+#thread-send-button,
+#thread-panel .send-button {
+	opacity: 0.5;
+	cursor: default;
+	transition: all 0.2s ease;
+	background-color: #ccc;
+	color: #666;
+
+	&.active {
+		opacity: 1;
+		cursor: pointer;
+		background-color: #0066ff;
+		color: white;
+
+		&:hover {
+			background-color: #0052cc;
+		}
+	}
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: default;
+		background-color: #ccc;
+		color: #666;
+	}
+}
+
+// Parent message actions
+.parent-message-header {
+	.message-actions {
+		display: none;
+
+		&.visible {
+			display: flex;
+		}
+	}
+}
+
+// Username colors in thread
+.thread-message {
+	.user-name {
+		&.current-user {
+			color: #800080;
+		}
+
+		&.other-user {
+			color: #ff69b4;
+		}
+	}
+}
+
+// Unread badge states
+.chat-icon .unread-badge,
+.channel-item .unread-badge {
+	&.hidden {
+		display: none !important;
+	}
+}
+
+// Search functionality styles
+.chat-search-container {
+	&.disabled {
+		pointer-events: none;
+		opacity: 0.6;
+	}
+}
+
+#chat-search-button {
+	&.visible {
+		display: flex !important;
+		align-items: center;
+		justify-content: center;
+		opacity: 1;
+		visibility: visible;
+	}
+
+	svg {
+		transition: opacity 0.2s ease;
+
+		&.active {
+			opacity: 1;
+			visibility: visible;
+		}
+	}
+}
+
+// Search results modal
+#search-results-modal {
+	&.active {
+		display: block;
+	}
+}
+
+// Search result parent content
+.search-result-item {
+	.parent-info {
+		.parent-content {
+			&.system-message {
+				color: #999;
+				font-style: italic;
+			}
+
+			&.error {
+				color: #cc0000;
+				font-style: italic;
+			}
+
+			&.data-inconsistency {
+				color: #999;
+				font-style: italic;
+			}
+		}
+	}
+}
+
+// Search history container
+.search-history-container {
+	&.visible {
+		display: block;
+		opacity: 1;
+		visibility: visible;
+	}
+}
+
+// Chat Search Inline CSS - Extracted from chat-search.js
+// =======================================================
+
+// Thread Reply Icon - スレッド返信アイコン
+.thread-reply-icon {
+	color: #ff8f00;
+	font-weight: bold;
+}
+
+// Thread Reply Search Result Background - スレッド返信の検索結果背景
+.search-result-item.thread-reply-item {
+	background-color: #e7f1ff;
+}
+
+// Search Result User Name Colors - 検索結果のユーザー名色
+.result-user.current-user {
+	color: #800080;
+}
+
+.result-user.other-user {
+	color: #ff69b4;
+}
+
+// LMS Chat Admin Inline CSS - Extracted from lms-chat-admin.js
+// ============================================================
+
+// Individual Fix Button Container - 個別修復ボタンのコンテナ
+.individual-fix-btn-container {
+	margin-top: 15px;
+}
+
+// Functions PHP Inline CSS - Extracted from functions.php
+// =======================================================
+
+// Image Preview - 画像プレビュー
+#image-preview {
+	max-width: 300px;
+
+	&.small-preview {
+		max-width: 200px;
+	}
+}
+
+// New Tab Label - 新しいタブで開くラベル
+.new-tab-label {
+	display: inline-block;
+	margin-left: 10px;
+}
+
+// Debug Info - デバッグ情報
+.debug-info {
+	margin: 10px 0;
+	padding: 10px;
+	background: #f8f9fa;
+	border-left: 4px solid #646970;
+
+	h3 {
+		margin-top: 0;
+	}
+}
+
+// Inactive Member Row - 非アクティブメンバー行
+.inactive-member-row {
+	background-color: #fef7f7;
+}
+
+// Chat Messages Inline CSS - Extracted from chat-messages.js (手戻り後の再処理)
+// ================================================================================
+
+// No more messages indicator - メッセージ終了インジケーター
+.no-more-messages {
+	text-align: center;
+	padding: 15px;
+	color: #999;
+	font-size: 13px;
+	font-style: italic;
+}
+
+// Load error message - ロードエラーメッセージ
+.load-error {
+	text-align: center;
+	padding: 15px;
+	color: #f44336;
+	font-size: 13px;
+	background: rgba(244, 67, 54, 0.1);
+	border-radius: 4px;
+	margin: 10px;
+}
+
+// Thread text styling - スレッドテキストスタイル
+.thread-text {
+	color: #666;
+}
+
+// Thread button active state - スレッドボタンアクティブ状態
+.thread-button-active {
+	color: #666 !important;
+}
+
+// Warning modal styling - 警告モーダルスタイル
+.warning-modal-text {
+	margin-bottom: 15px;
+	color: #856404;
+}
+
+.warning-modal-buttons {
+	text-align: right;
+}
+
+// NEW mark styling - NEWマークスタイル
+.new-mark {
+	background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+	color: white;
+	font-size: 10px;
+	padding: 2px 6px;
+	border-radius: 12px;
+	font-weight: bold;
+	margin-left: 8px;
+	display: inline-block;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	animation: newMarkPulse 2s infinite;
+}
+
+@keyframes newMarkPulse {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+}
+
+// Thread delete warning modal - スレッド削除警告モーダル
+.thread-delete-warning {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff3cd;
+	border: 1px solid #ffeaa7;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	z-index: 10000;
+	min-width: 350px;
+	max-width: 500px;
+
+	.close-warning {
+		padding: 5px 15px;
+		background: #ffc107;
+		color: #212529;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+}
+
+.thread-delete-warning-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 9999;
+}
+
+// Content Chat PHP Safe CSS - 検索モーダル不具合回避版
+// ========================================================
+
+// Basic hidden elements - 基本的な非表示要素（モーダル以外）
+.chat-element-hidden {
+	display: none !important;
+}
+
+// Channel header styling - チャンネルヘッダースタイル
+.channel-header-icon {
+	display: none;
+}
+
+.icon-lock {
+	display: none;
+}
+
+// Search input wrapper - 検索入力ラッパー
+.search-input-wrapper {
+	position: relative;
+	min-width: 120px;
+}
+
+// Chat search input - チャット検索入力
+.chat-search-input {
+	padding-left: 35px !important;
+}
+
+// Chat search button - チャット検索ボタン
+.chat-search-button {
+	position: absolute !important;
+	left: 10px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	z-index: 9999 !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+	pointer-events: auto !important;
+	width: 20px !important;
+	height: 20px !important;
+
+	svg {
+		opacity: 1 !important;
+		visibility: visible !important;
+		display: block !important;
+	}
+}
+
+// Search components - 検索コンポーネント（モーダル以外）
+.search-history-container {
+	display: none;
+}
+
+.search-options-panel {
+	display: none;
+}
+
+// Channel members count - チャンネルメンバー数
+.channel-members-count {
+	display: none;
+}
+
+// Search results internal elements - 検索結果内部要素のみ（モーダル自体は触らない）
+.search-results-loading {
+	display: none;
+}
+
+.search-results-empty {
+	display: none;
+}
+
+// 履歴終了メッセージ - シックでエレガントなデザイン
+.end-of-history-message {
+	text-align: center;
+	position: relative;
+	margin: 16px 0;
+
+	.end-message-content {
+		align-items: center;
+
+		&:hover {
+			opacity: 0.9;
+		}
+
+		i {
+			font-size: 24px;
+			color: #8e9297;
+			margin-bottom: 4px;
+			filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+		}
+
+		p {
+			margin: 0;
+			font-size: 14px;
+			font-weight: 500;
+			color: #72767d;
+			letter-spacing: 0.5px;
+			text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+	}
+
+	// ダークモード対応
+	@media (prefers-color-scheme: dark) {
+		.end-message-content {
+			i {
+				color: #b3b3b3;
+			}
+
+			p {
+				color: #a0a0a0;
+			}
+		}
+	}
+}

@@ -1,0 +1,71 @@
+/**
+ * ミックスイン
+ */
+
+@use 'variables' as vars;
+
+// メディアクエリ
+@mixin media-breakpoint-up($breakpoint) {
+	@media (min-width: $breakpoint) {
+		@content;
+	}
+}
+
+@mixin media-breakpoint-down($breakpoint) {
+	@media (max-width: $breakpoint) {
+		@content;
+	}
+}
+
+// フレックスボックス
+@mixin flex($direction: row, $justify: flex-start, $align: stretch) {
+	display: flex;
+	flex-direction: $direction;
+	justify-content: $justify;
+	align-items: $align;
+}
+
+// グリッド
+@mixin grid($columns: 1, $gap: vars.$spacing-md) {
+	display: grid;
+	grid-template-columns: repeat($columns, 1fr);
+	gap: $gap;
+}
+
+// トランジション
+@mixin transition($property: all, $duration: 0.3s, $timing: ease) {
+	transition: $property $duration $timing;
+}
+
+// ボックスシャドウ
+@mixin box-shadow($level: 1) {
+	@if $level == 1 {
+		box-shadow: vars.$box-shadow-light;
+	} @else if $level == 2 {
+		box-shadow: vars.$box-shadow-primary;
+	}
+}
+
+// テキスト省略
+@mixin text-truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+// アスペクト比を保持
+@mixin aspect-ratio($width, $height) {
+	position: relative;
+	&::before {
+		content: '';
+		display: block;
+		padding-top: ($height / $width) * 100%;
+	}
+	> * {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
+}

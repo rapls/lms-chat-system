@@ -1,0 +1,170 @@
+/**
+ * カードコンポーネントのスタイル
+ */
+
+.card {
+	background-color: $color-white;
+	border-radius: $border-radius-lg;
+	box-shadow: $shadow-sm;
+	overflow: hidden;
+	transition: $transition-base;
+
+	&:hover {
+		box-shadow: $shadow-md;
+		transform: translateY(-2px);
+	}
+
+	// カードヘッダー
+	.card-header {
+		padding: $spacing-md;
+		border-bottom: 1px solid $color-border;
+		background-color: $color-background;
+
+		.card-title {
+			margin: 0;
+			font-size: 1.25rem;
+			font-weight: 600;
+			color: $color-text;
+		}
+
+		.card-subtitle {
+			margin-top: $spacing-xs;
+			font-size: 0.875rem;
+			color: $color-text-light;
+		}
+	}
+
+	// カード画像
+	.card-image {
+		position: relative;
+		overflow: hidden;
+
+		img {
+			width: 100%;
+			height: auto;
+			display: block;
+		}
+
+		.card-image-overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: rgba(0, 0, 0, 0.5);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			opacity: 0;
+			transition: $transition-base;
+
+			&:hover {
+				opacity: 1;
+			}
+		}
+	}
+
+	// カードボディ
+	.card-body {
+		padding: $spacing-md;
+
+		p:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	// カードフッター
+	.card-footer {
+		padding: $spacing-md;
+		border-top: 1px solid $color-border;
+		background-color: $color-background;
+	}
+
+	// 水平カードレイアウト
+	&.card-horizontal {
+		@media (min-width: $breakpoint-md) {
+			display: flex;
+
+			.card-image {
+				width: 33.333%;
+
+				img {
+					height: 100%;
+					object-fit: cover;
+				}
+			}
+
+			.card-content {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+			}
+		}
+	}
+
+	// カードスタイルバリエーション
+	&.card-primary {
+		border-top: 3px solid $color-primary;
+	}
+
+	&.card-secondary {
+		border-top: 3px solid $color-secondary;
+	}
+
+	&.card-success {
+		border-top: 3px solid $color-success;
+	}
+
+	&.card-error {
+		border-top: 3px solid $color-error;
+	}
+
+	// カードグループ内のカード
+	.card-group & {
+		border-radius: 0;
+
+		&:first-child {
+			border-top-left-radius: $border-radius-lg;
+			border-bottom-left-radius: $border-radius-lg;
+		}
+
+		&:last-child {
+			border-top-right-radius: $border-radius-lg;
+			border-bottom-right-radius: $border-radius-lg;
+		}
+	}
+}
+
+// カードグループ
+.card-group {
+	display: flex;
+	flex-wrap: wrap;
+
+	.card {
+		flex: 1;
+		margin: 0;
+
+		& + .card {
+			margin-left: -1px;
+		}
+	}
+
+	@media (max-width: $breakpoint-md) {
+		flex-direction: column;
+
+		.card {
+			margin-left: 0;
+
+			& + .card {
+				margin-top: $spacing-md;
+			}
+		}
+	}
+}
+
+// カードグリッド
+.card-grid {
+	display: grid;
+	gap: $spacing-md;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}

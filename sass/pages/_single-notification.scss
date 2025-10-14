@@ -1,0 +1,267 @@
+/* ニュース詳細ページのスタイル */
+.notification-detail {
+	padding: 4rem 0;
+	background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+	min-height: calc(100vh - 60px);
+
+	.notification-container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 3rem;
+		background: #fff;
+		border-radius: 20px;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+	}
+
+	.notification-header {
+		margin-bottom: 2.5rem;
+	}
+
+	.notification-meta {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.notification-date {
+		display: inline-flex;
+		align-items: center;
+		font-size: 0.95rem;
+		color: #40e0d0;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		padding: 0.4rem 1rem;
+		background: rgba(64, 224, 208, 0.1);
+		border-radius: 30px;
+	}
+
+	.notification-category {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.4rem 1rem;
+		background: #f1f3f5;
+		color: #495057;
+		font-size: 0.9rem;
+		font-weight: 600;
+		border-radius: 30px;
+	}
+
+	.notification-title {
+		font-size: 2rem;
+		font-weight: 800;
+		color: #2d3436;
+		line-height: 1.4;
+		letter-spacing: -0.02em;
+		margin: 0;
+	}
+
+	.notification-content {
+		font-size: 1.05rem;
+		line-height: 1.8;
+		color: #495057;
+		margin-bottom: 3rem;
+
+		p {
+			margin-bottom: 1.5rem;
+		}
+
+		img {
+			max-width: 100%;
+			height: auto;
+			border-radius: 12px;
+			margin: 2rem 0;
+		}
+
+		h2 {
+			font-size: 1.5rem;
+			font-weight: 700;
+			color: #2d3436;
+			margin: 2.5rem 0 1.5rem;
+		}
+
+		h3 {
+			font-size: 1.3rem;
+			font-weight: 700;
+			color: #2d3436;
+			margin: 2rem 0 1.2rem;
+		}
+
+		ul,
+		ol {
+			margin: 1.5rem 0;
+			padding-left: 1.5rem;
+
+			li {
+				margin-bottom: 0.8rem;
+			}
+		}
+
+		blockquote {
+			margin: 2rem 0;
+			padding: 1.5rem 2rem;
+			border-left: 4px solid #40e0d0;
+			background: #f8f9fa;
+			border-radius: 0 12px 12px 0;
+			font-style: italic;
+			color: #495057;
+		}
+	}
+
+	.notification-footer {
+		border-top: 1px solid #e9ecef;
+		padding-top: 2rem;
+		margin-top: 3rem;
+	}
+
+	.notification-navigation {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 1rem;
+
+		a {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.75rem;
+			padding: 0.8rem 1.5rem;
+			color: #495057;
+			text-decoration: none;
+			font-size: 0.95rem;
+			font-weight: 600;
+			background: #f8f9fa;
+			border-radius: 50px;
+			transition: all 0.3s ease;
+
+			&:hover {
+				background: #f1f3f5;
+				color: #40e0d0;
+				transform: translateY(-2px);
+
+				svg {
+					color: #40e0d0;
+				}
+			}
+
+			svg {
+				width: 20px;
+				height: 20px;
+				color: #868e96;
+				transition: color 0.3s ease;
+			}
+
+			&.nav-previous {
+				svg {
+					order: -1;
+				}
+			}
+		}
+
+		.nav-to-mypage {
+			color: #fff;
+			background: #40e0d0;
+			box-shadow: 0 4px 15px rgba(64, 224, 208, 0.3);
+
+			&:hover {
+				background: #2ccac0;
+				color: #fff;
+				box-shadow: 0 8px 20px rgba(64, 224, 208, 0.4);
+
+				svg {
+					color: #fff;
+				}
+			}
+		}
+
+		.nav-to-archive {
+			color: #fff;
+			background: #40e0d0;
+			box-shadow: 0 4px 15px rgba(64, 224, 208, 0.3);
+
+			&:hover {
+				background: #2ccac0;
+				color: #fff;
+				box-shadow: 0 8px 20px rgba(64, 224, 208, 0.4);
+
+				img {
+					transform: translateX(4px);
+				}
+			}
+
+			img {
+				transition: transform 0.3s ease;
+			}
+		}
+	}
+}
+
+// レスポンシブデザイン
+@media (max-width: 768px) {
+	.notification-detail {
+		padding: 2rem 0;
+
+		.notification-container {
+			padding: 2rem;
+			margin: 0 1.5rem;
+		}
+
+		.notification-title {
+			font-size: 1.75rem;
+		}
+
+		.notification-content {
+			font-size: 1rem;
+		}
+
+		.notification-navigation {
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 1rem;
+
+			a {
+				min-width: 160px;
+				justify-content: center;
+			}
+
+			.nav-to-mypage {
+				width: 100%;
+				order: -1;
+				margin-bottom: 1rem;
+			}
+		}
+	}
+}
+
+@media (max-width: 480px) {
+	.notification-detail {
+		.notification-container {
+			padding: 1.5rem;
+			margin: 0 1rem;
+		}
+
+		.notification-meta {
+			flex-wrap: wrap;
+			gap: 0.75rem;
+		}
+
+		.notification-title {
+			font-size: 1.5rem;
+		}
+
+		.notification-content {
+			font-size: 0.95rem;
+
+			h2 {
+				font-size: 1.3rem;
+			}
+
+			h3 {
+				font-size: 1.2rem;
+			}
+
+			blockquote {
+				padding: 1.25rem 1.5rem;
+			}
+		}
+	}
+}

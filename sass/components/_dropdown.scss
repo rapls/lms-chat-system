@@ -1,0 +1,124 @@
+/* ドロップダウンコンポーネント */
+.dropdown {
+	position: relative;
+	display: inline-block;
+
+	// ドロップダウントリガー
+	.dropdown-trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		cursor: pointer;
+
+		&::after {
+			content: '';
+			display: inline-block;
+			width: 0.5em;
+			height: 0.5em;
+			margin-left: 0.5em;
+			border-right: 2px solid currentColor;
+			border-bottom: 2px solid currentColor;
+			transform: rotate(45deg);
+			transition: transform 0.3s ease;
+		}
+
+		&.active::after {
+			transform: rotate(-135deg);
+		}
+	}
+
+	// ドロップダウンメニュー
+	.dropdown-menu {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		z-index: 1000;
+		min-width: 10rem;
+		padding: 0.5rem 0;
+		margin: 0.125rem 0 0;
+		background-color: var(--color-white);
+		border: 1px solid var(--color-border);
+		border-radius: 0.5rem;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-10px);
+		transition: all 0.3s ease;
+
+		&.show {
+			opacity: 1;
+			visibility: visible;
+			transform: translateY(0);
+		}
+
+		// 右寄せ
+		&.dropdown-menu-right {
+			right: 0;
+			left: auto;
+		}
+
+		// ドロップダウンアイテム
+		.dropdown-item {
+			display: block;
+			width: 100%;
+			padding: 0.5rem 1rem;
+			clear: both;
+			font-weight: 400;
+			color: var(--color-text);
+			text-align: inherit;
+			white-space: nowrap;
+			background-color: transparent;
+			border: 0;
+			cursor: pointer;
+
+			&:hover {
+				color: var(--color-primary);
+				background-color: rgba(var(--color-primary-rgb), 0.1);
+			}
+
+			&.active {
+				color: var(--color-white);
+				background-color: var(--color-primary);
+			}
+
+			&.disabled {
+				color: var(--color-text-secondary);
+				pointer-events: none;
+				background-color: transparent;
+			}
+		}
+
+		// 区切り線
+		.dropdown-divider {
+			height: 0;
+			margin: 0.5rem 0;
+			overflow: hidden;
+			border-top: 1px solid var(--color-border);
+		}
+
+		// ヘッダー
+		.dropdown-header {
+			display: block;
+			padding: 0.5rem 1rem;
+			margin-bottom: 0;
+			font-size: 0.875rem;
+			color: var(--color-text-secondary);
+			white-space: nowrap;
+		}
+	}
+
+	// サイズバリエーション
+	&.dropdown-sm {
+		.dropdown-menu {
+			font-size: 0.875rem;
+			min-width: 8rem;
+		}
+	}
+
+	&.dropdown-lg {
+		.dropdown-menu {
+			font-size: 1.125rem;
+			min-width: 12rem;
+		}
+	}
+}

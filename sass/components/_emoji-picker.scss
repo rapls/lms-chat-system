@@ -1,0 +1,321 @@
+// 絵文字ピッカーのスタイル
+.emoji-picker {
+	position: fixed;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 0;
+	z-index: 10001;
+	display: none;
+	width: 320px;
+	transition: box-shadow 0.2s ease;
+
+	&.active {
+		display: block;
+	}
+
+	&.dragging {
+		opacity: 0.95;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+	}
+
+	&.position-top {
+		position: fixed;
+		bottom: 145px !important;
+		top: auto !important;
+
+		.emoji-picker-header:after {
+			display: none;
+		}
+	}
+
+	// ヘッダー部分
+	.emoji-picker-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 10px 12px;
+		border-bottom: 1px solid #edf0f2;
+		cursor: move;
+		border-radius: 8px 8px 0 0;
+		background: #f8f9fa;
+		user-select: none;
+
+		.emoji-picker-title {
+			font-weight: 500;
+			font-size: 14px;
+			color: #333;
+		}
+
+		.emoji-picker-close {
+			cursor: pointer;
+			font-size: 18px;
+			width: 24px;
+			height: 24px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 50%;
+
+			&:hover {
+				background: rgba(0, 0, 0, 0.1);
+			}
+		}
+	}
+
+	.emoji-categories {
+		display: flex;
+		gap: 8px;
+		margin: 8px;
+		padding-bottom: 8px;
+		border-bottom: 1px solid #edf0f2;
+		overflow-x: auto;
+		overflow-y: hidden;
+		white-space: nowrap;
+	}
+
+	.emoji-category {
+		padding: 8px;
+		cursor: pointer;
+		opacity: 0.7;
+		transition: all 0.2s ease;
+		border-radius: 4px;
+
+		&:hover {
+			opacity: 1;
+			background: #f0f2f5;
+		}
+
+		&.active {
+			opacity: 1;
+			background: #e3efff;
+			color: #0066ff;
+		}
+	}
+
+	.emoji-list {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		gap: 4px;
+		max-height: 300px;
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding: 8px;
+	}
+
+	.emoji-item {
+		padding: 8px;
+		cursor: pointer;
+		text-align: center;
+		border-radius: 6px;
+		font-size: 20px;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: #f0f2f5;
+			transform: scale(1.1);
+		}
+	}
+
+	.emoji-empty-message {
+		text-align: center;
+		color: #666;
+		padding: 16px;
+		font-size: 14px;
+		grid-column: 1 / -1;
+	}
+}
+
+// リアクションアイテムとツールチップ
+.reaction-item {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 8px;
+	background: #f0f2f5;
+	border-radius: 24px;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: 1px solid transparent;
+	position: relative;
+
+	&:hover {
+		background: #e4e6e9;
+	}
+
+	&.user-reacted {
+		background: #e3efff;
+		border-color: #0066ff;
+
+		&::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: rgba(0, 102, 255, 0.12);
+			border-radius: inherit;
+			pointer-events: none;
+			z-index: 0;
+		}
+
+		&:hover {
+			background: #d1e5ff;
+		}
+	}
+
+	.emoji {
+		margin-right: 6px;
+		font-size: 16px;
+		position: relative;
+		z-index: 1;
+	}
+
+	.count {
+		color: #666;
+		font-weight: 500;
+		position: relative;
+		z-index: 1;
+	}
+}
+
+.reaction-tooltip {
+	position: absolute;
+	background: rgba(0, 0, 0, 0.8);
+	color: white;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	pointer-events: none;
+	z-index: 1000;
+	white-space: nowrap;
+}
+
+// リアクションボタン
+.action-button.add-reaction {
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background-color: rgba(0, 0, 0, 0.05);
+	}
+
+	&:active {
+		transform: scale(0.95);
+	}
+}
+
+// 親メッセージのリアクション
+.parent-message {
+	position: relative !important;
+
+	.message-actions {
+		position: absolute !important;
+		right: 10px !important;
+		top: 73px !important;
+		transform: translateY(-50%) !important;
+		display: none !important;
+		z-index: 100 !important;
+		background-color: white !important;
+		border-radius: 4px !important;
+		padding: 2px !important;
+		pointer-events: auto !important;
+		visibility: visible !important;
+		opacity: 1 !important;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+	}
+
+	&:hover .message-actions {
+		display: flex !important;
+	}
+
+	.action-button.add-reaction {
+		border: none !important;
+		background: transparent !important;
+		color: #666 !important;
+		padding: 4px !important;
+		border-radius: 4px !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		opacity: 0.7 !important;
+		cursor: pointer !important;
+		min-width: 24px !important;
+		min-height: 24px !important;
+		pointer-events: auto !important;
+		visibility: visible !important;
+
+		img {
+			width: 20px !important;
+			height: 20px !important;
+			pointer-events: none !important;
+		}
+
+		&:hover {
+			background-color: rgba(0, 0, 0, 0.05) !important;
+			opacity: 1 !important;
+		}
+	}
+
+	// 削除ボタン用のスタイル
+	.action-button.delete-parent-message {
+		border: none !important;
+		background: transparent !important;
+		color: #666 !important;
+		padding: 4px !important;
+		border-radius: 4px !important;
+		display: none !important;
+		align-items: center !important;
+		justify-content: center !important;
+		opacity: 0.7 !important;
+		cursor: pointer !important;
+		min-width: 24px !important;
+		min-height: 24px !important;
+		pointer-events: auto !important;
+		visibility: visible !important;
+
+		svg {
+			width: 16px !important;
+			height: 16px !important;
+			stroke: currentColor !important;
+		}
+
+		&:hover {
+			background-color: #fee2e2 !important;
+			color: #dc2626 !important;
+			opacity: 1 !important;
+		}
+	}
+
+	// 自分の投稿の場合に削除ボタンを表示
+	&.current-user {
+		.message-actions {
+			.action-button.delete-parent-message {
+				display: flex !important;
+			}
+		}
+	}
+}
+
+.message-reactions {
+	display: flex;
+	flex-wrap: wrap;
+	margin-top: 4px;
+	gap: 4px;
+}
+
+// 親メッセージのリアクション
+.parent-message-reactions {
+	margin: 8px 0;
+	padding: 0 16px 8px 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+// スレッドパネル
+.thread-panel {
+	&.open {
+		right: 0 !important;
+		visibility: visible !important;
+		opacity: 1 !important;
+	}
+}

@@ -1,0 +1,129 @@
+/**
+ * グリッドレイアウトのスタイル
+ */
+
+@use '../abstracts/variables' as vars;
+
+.container {
+	width: 100%;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1rem;
+
+	@media (max-width: vars.$breakpoint-md) {
+		padding: 0; // タブレットサイズではパディングを0に
+		margin: 2em auto;
+	}
+}
+
+// グリッドシステム
+.grid {
+	display: grid;
+	gap: vars.$spacing-md;
+
+	&.grid-2 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	&.grid-3 {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	&.grid-4 {
+		grid-template-columns: repeat(4, 1fr);
+	}
+
+	&.grid-auto-fit {
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	}
+}
+
+// グリッドカラム数のユーティリティクラス
+@for $i from 1 through 12 {
+	.grid-cols-#{$i} {
+		grid-template-columns: repeat($i, 1fr);
+	}
+}
+
+// レスポンシブ対応
+@media (max-width: vars.$breakpoint-md) {
+	.container {
+		padding: 0 vars.$spacing-sm;
+		margin: 2em auto;
+	}
+
+	@for $i from 1 through 12 {
+		.grid-cols-#{$i} {
+			grid-template-columns: repeat(min($i, 2), 1fr);
+		}
+	}
+}
+
+@media (max-width: vars.$breakpoint-sm) {
+	.grid-cols-1,
+	.grid-cols-2,
+	.grid-cols-3,
+	.grid-cols-4,
+	.grid-cols-5,
+	.grid-cols-6 {
+		grid-template-columns: 1fr;
+	}
+}
+
+// フレックスボックスレイアウト
+.flex {
+	display: flex;
+	gap: vars.$spacing-md;
+
+	&.flex-wrap {
+		flex-wrap: wrap;
+	}
+
+	&.flex-column {
+		flex-direction: column;
+	}
+
+	&.items-center {
+		align-items: center;
+	}
+
+	&.items-start {
+		align-items: flex-start;
+	}
+
+	&.items-end {
+		align-items: flex-end;
+	}
+
+	&.justify-center {
+		justify-content: center;
+	}
+
+	&.justify-between {
+		justify-content: space-between;
+	}
+
+	&.justify-around {
+		justify-content: space-around;
+	}
+}
+
+// ギャップユーティリティ
+.gap-0 {
+	gap: 0;
+}
+.gap-1 {
+	gap: vars.$spacing-xs;
+}
+.gap-2 {
+	gap: vars.$spacing-sm;
+}
+.gap-3 {
+	gap: vars.$spacing-md;
+}
+.gap-4 {
+	gap: vars.$spacing-lg;
+}
+.gap-5 {
+	gap: vars.$spacing-xl;
+}

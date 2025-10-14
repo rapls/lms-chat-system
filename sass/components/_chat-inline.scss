@@ -1,0 +1,637 @@
+// Chat Inline Styles - Extracted from JavaScript and PHP files
+// This file contains styles that were previously inline in JS/PHP files
+
+// Thread Panel Styles
+.thread-panel {
+	position: fixed;
+	right: 0;
+	top: 0;
+	width: 400px;
+	height: 100vh;
+	background: white;
+	border-left: 1px solid #ddd;
+	z-index: 1000;
+	transform: translateX(0);
+	opacity: 1;
+	visibility: visible;
+
+	&.show.open {
+		transform: translateX(0);
+		opacity: 1;
+		visibility: visible;
+	}
+
+	.thread-header {
+		padding: 15px;
+		border-bottom: 1px solid #eee;
+		background: #f8f9fa;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+
+		h3 {
+			margin: 0;
+			font-size: 16px;
+		}
+
+		.close-thread-btn {
+			background: none;
+			border: none;
+			font-size: 20px;
+			cursor: pointer;
+			padding: 0;
+			width: 30px;
+			height: 30px;
+		}
+	}
+
+	.parent-message {
+		padding: 15px;
+		border-bottom: 1px solid #eee;
+		background: #f9f9f9;
+	}
+
+	.thread-messages {
+		flex: 1;
+		overflow-y: auto;
+		padding: 15px;
+		max-height: calc(100vh - 250px);
+	}
+
+	.thread-input-container {
+		padding: 15px;
+		border-top: 1px solid #eee;
+		background: white;
+
+		.thread-input {
+			width: 100%;
+			min-height: 60px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			padding: 8px;
+			resize: vertical;
+		}
+
+		.thread-send-btn {
+			margin-top: 8px;
+			background: #007cba;
+			color: white;
+			border: none;
+			padding: 8px 16px;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+	}
+}
+
+// Loading and Error States for Thread
+// .thread-loading-direct は削除 - メインチャットの .loading-indicator を使用
+
+	div:last-child {
+		font-size: 12px;
+		opacity: 0.8;
+	}
+}
+
+.thread-error-direct {
+	text-align: center;
+	padding: 40px 20px;
+	color: #ff4444;
+
+	p:first-child {
+		font-size: 16px;
+		font-weight: bold;
+		margin-bottom: 10px;
+	}
+
+	.error-details {
+		font-size: 14px;
+		color: #666;
+		margin-bottom: 20px;
+	}
+
+	.retry-button {
+		background: #007cba;
+		color: white;
+		border: none;
+		padding: 10px 20px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+}
+
+// Loading Indicator for Messages
+.loading-indicator {
+	text-align: center;
+	padding: 20px;
+	color: #999;
+}
+
+// Search Result Thread Reply Icon
+.thread-reply-icon {
+	color: #ff8f00;
+	font-weight: bold;
+}
+
+// Chat Input Auto-resize Support
+#chat-input {
+	resize: vertical;
+}
+
+// Unread Badges
+.unread-badge {
+	display: none;
+
+	&.visible {
+		display: inline-block;
+	}
+}
+
+// Keyframes for spinner animation
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+// Thread Avatar Z-Index Stacking
+.thread-avatar {
+	// z-index will be set dynamically via JavaScript
+}
+
+// New Message Mark
+.new-mark {
+	background: #ff4444;
+	color: white;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: bold;
+}
+
+// No More Messages Indicator
+.no-more-messages {
+	text-align: center;
+	padding: 15px;
+	color: #999;
+	font-size: 13px;
+	font-style: italic;
+}
+
+// Load Error Message
+.load-error {
+	text-align: center;
+	padding: 15px;
+	color: #f44336;
+	font-size: 13px;
+	background: rgba(244, 67, 54, 0.1);
+	border-radius: 4px;
+	margin: 10px;
+}
+
+// Thread Button Text Color
+.thread-text {
+	color: #666;
+}
+
+// Search Result Thread Reply Styling
+.search-result-item.thread-reply-item {
+	background-color: #e7f1ff;
+}
+
+// Search Result User Name Colors
+.result-user.current-user {
+	color: #800080;
+}
+
+.result-user.other-user {
+	color: #ff69b4;
+}
+
+// Thread Delete Warning Modal
+.thread-delete-warning {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff3cd;
+	border: 1px solid #ffeaa7;
+	border-radius: 4px;
+	padding: 20px;
+	z-index: 10001;
+	max-width: 500px;
+
+	p {
+		margin-bottom: 15px;
+		color: #856404;
+	}
+
+	.warning-actions {
+		text-align: right;
+	}
+
+	.close-warning {
+		padding: 5px 15px;
+		background: #ffc107;
+		color: #212529;
+		border: none;
+		border-radius: 3px;
+		cursor: pointer;
+	}
+}
+
+.thread-delete-warning-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 10000;
+}
+
+// Channel Header Icon Styles
+.channel-header-icon {
+	display: none;
+
+	&.visible {
+		display: flex;
+	}
+
+	.icon-lock {
+		display: none;
+
+		&.visible {
+			display: block;
+		}
+	}
+}
+
+// Search Input and Button Styles
+.search-input-wrapper {
+	position: relative;
+	min-width: 120px;
+
+	.chat-search-input {
+		padding-left: 35px !important;
+	}
+
+	.chat-search-button {
+		position: absolute !important;
+		left: 10px !important;
+		top: 50% !important;
+		transform: translateY(-50%) !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		z-index: 9999 !important;
+		opacity: 1 !important;
+		visibility: visible !important;
+		pointer-events: auto !important;
+		width: 20px !important;
+		height: 20px !important;
+
+		svg {
+			opacity: 1 !important;
+			visibility: visible !important;
+			display: block !important;
+		}
+	}
+
+	.search-history-container {
+		display: none;
+
+		&.visible {
+			display: block;
+		}
+	}
+}
+
+// Search Options Panel
+.search-options-panel {
+	display: none;
+
+	&.visible {
+		display: block;
+	}
+}
+
+// Channel Members Count
+.channel-members-count {
+	display: none;
+
+	&.visible {
+		display: inline-block;
+	}
+}
+
+// File Input Hidden
+.file-input-hidden {
+	display: none;
+}
+
+// Search Results Modal
+#search-results-modal {
+	display: none;
+
+	&.visible {
+		display: block;
+	}
+
+	.search-results-loading {
+		display: none;
+
+		&.visible {
+			display: block;
+		}
+	}
+
+	.search-results-empty {
+		display: none;
+
+		&.visible {
+			display: block;
+		}
+	}
+}
+
+// Date Picker Overlay and Container
+.date-picker-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 9998;
+	opacity: 0;
+	transition: opacity 0.2s ease;
+
+	&.show {
+		opacity: 1;
+	}
+}
+
+.date-picker-container {
+	position: fixed;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	z-index: 9999;
+	opacity: 0;
+	transform: scale(0.9);
+	transition: opacity 0.2s ease, transform 0.2s ease;
+
+	&.show {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	.date-picker {
+		border: none;
+		outline: none;
+	}
+}
+
+// Message Delete Animation States
+.chat-message.deleting {
+	opacity: 0.5;
+	pointer-events: none;
+	transform: scale(0.95);
+	transition: all 0.3s ease;
+}
+
+// Not Last Message Warning Modal (from chat-threads.js)
+.not-last-message-warning {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff3cd;
+	border: 1px solid #ffeaa7;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	z-index: 10000;
+	min-width: 300px;
+
+	p {
+		margin-bottom: 15px;
+		color: #856404;
+	}
+
+	.warning-actions {
+		text-align: right;
+	}
+
+	.close-warning {
+		padding: 5px 15px;
+		background: #ffc107;
+		color: #212529;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+}
+
+.not-last-message-warning-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 9999;
+}
+
+// Parent Message Delete Warning Modal (from chat-threads.js)
+.parent-message-delete-warning {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff3cd;
+	border: 1px solid #ffeaa7;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	z-index: 10000;
+	min-width: 300px;
+
+	p {
+		margin-bottom: 15px;
+		color: #856404;
+	}
+
+	.warning-actions {
+		text-align: right;
+	}
+
+	.close-warning {
+		padding: 5px 15px;
+		background: #ffc107;
+		color: #212529;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+}
+
+.parent-message-delete-warning-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 9999;
+}
+
+// Thread Message User Name Colors
+.thread-message .user-name.current-user-name {
+	color: #800080 !important;
+}
+
+.thread-message .user-name.other-user-name {
+	color: #ff69b4 !important;
+}
+
+// Message Actions Flex Display
+.message-actions {
+	display: flex;
+}
+
+// Long Poll Unread Badges (from chat-longpoll.js)
+.thread-unread-badge.force-thread-badge {
+	background: #ff4444 !important;
+	color: white !important;
+	border-radius: 10px !important;
+	padding: 2px 6px !important;
+	font-size: 11px !important;
+	margin-left: 5px !important;
+	display: inline-block !important;
+	z-index: 1000 !important;
+}
+
+.absolute-thread-badge {
+	position: fixed;
+	top: 100px;
+	right: 20px;
+	background: #ff4444;
+	color: white;
+	padding: 5px 10px;
+	border-radius: 5px;
+	z-index: 9999;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.channel-unread-badge.force-channel-badge {
+	background: #ff4444 !important;
+	color: white !important;
+	border-radius: 10px !important;
+	padding: 2px 6px !important;
+	font-size: 11px !important;
+	margin-left: 5px !important;
+	display: inline-block !important;
+	z-index: 1000 !important;
+}
+
+.absolute-channel-badge {
+	position: fixed;
+	top: 140px;
+	right: 20px;
+	background: #ff4444;
+	color: white;
+	padding: 5px 10px;
+	border-radius: 5px;
+	z-index: 9999;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.final-thread-badge-closed {
+	background: #ff4444;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: 5px;
+	position: absolute;
+	top: -5px;
+	right: -5px;
+}
+
+.final-channel-badge-closed {
+	background: #ff4444;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: 5px;
+	position: absolute;
+	top: -5px;
+	right: -5px;
+}
+
+.thread-force-badge {
+	background: #ff4444;
+	color: white;
+	border-radius: 50%;
+	width: 18px;
+	height: 18px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	font-weight: bold;
+	margin-left: 5px;
+}
+
+.thread-unread-badge {
+	background: #ff4444;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: 5px;
+}
+
+.channel-unread-badge {
+	background: #ff4444;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: 5px;
+}
+
+.final-thread-badge {
+	background: #ff4444;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: 5px;
+	position: absolute;
+	top: -5px;
+	right: -5px;
+}
+
+.final-channel-badge {
+	background: #ff4444;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 11px;
+	margin-left: 5px;
+	position: absolute;
+	top: -5px;
+	right: -5px;
+}
+
+// Hidden SVG Icons Container
+.hidden-svg-icons {
+	display: none;
+}

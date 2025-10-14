@@ -1,0 +1,21 @@
+@use '../abstracts/variables' as *;
+
+.tablenav-pages {
+	margin: $spacing-md 0;
+	text-align: right;
+}
+
+.pagination-links {
+	margin-left: $spacing-md;
+
+	a,
+	span {
+		padding: 0 $spacing-sm;
+		text-decoration: none;
+	}
+
+	.current {
+		font-weight: 600;
+		color: $color-text;
+	}
+}

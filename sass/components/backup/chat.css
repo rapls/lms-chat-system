@@ -1,0 +1,387 @@
+/* 検索機能のスタイル */
+.chat-search-container {
+	position: relative;
+	margin-bottom: 10px;
+	z-index: 10;
+}
+
+.chat-search-form {
+	display: flex;
+	align-items: center;
+}
+
+.chat-search-input-wrap {
+	position: relative;
+	flex-grow: 1;
+}
+
+#chat-search-input {
+	width: 100%;
+	padding: 8px 10px;
+	padding-right: 30px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 14px;
+	transition: all 0.3s;
+}
+
+#chat-search-input:focus {
+	border-color: #0071a1;
+	box-shadow: 0 0 3px rgba(0, 113, 161, 0.3);
+}
+
+.chat-search-button {
+	background: #0071a1;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	padding: 8px 12px;
+	margin-left: 5px;
+	cursor: pointer;
+	transition: background 0.3s;
+}
+
+.chat-search-button:hover {
+	background: #005f88;
+}
+
+.chat-search-options-button {
+	background: none;
+	border: none;
+	padding: 6px;
+	margin-left: 5px;
+	cursor: pointer;
+	color: #666;
+	position: relative;
+}
+
+.chat-search-options-button svg {
+	width: 20px;
+	height: 20px;
+}
+
+/* 検索履歴 */
+.search-history-container {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	max-height: 250px;
+	overflow-y: auto;
+	background: white;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	margin-top: 5px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	display: none;
+}
+
+.search-history-item {
+	padding: 8px 10px;
+	border-bottom: 1px solid #eee;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+}
+
+.search-history-item:hover {
+	background-color: #f5f5f5;
+}
+
+.search-history-item:last-child {
+	border-bottom: none;
+}
+
+.history-icon {
+	margin-right: 8px;
+	color: #666;
+	flex-shrink: 0;
+}
+
+.history-query {
+	flex-grow: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.remove-history-item {
+	background: none;
+	border: none;
+	color: #999;
+	cursor: pointer;
+	padding: 2px 6px;
+	font-size: 16px;
+	line-height: 1;
+	margin-left: 5px;
+	border-radius: 50%;
+	transition: background 0.2s;
+}
+
+.remove-history-item:hover {
+	background-color: #eee;
+	color: #666;
+}
+
+/* 検索オプションパネル */
+.search-options-panel {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	width: 250px;
+	background: white;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	margin-top: 5px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	padding: 10px;
+	display: none;
+}
+
+.search-option {
+	margin-bottom: 10px;
+}
+
+.search-option label {
+	display: block;
+	margin-bottom: 5px;
+	font-weight: 500;
+	color: #444;
+}
+
+.search-option select,
+.search-option input {
+	width: 100%;
+	padding: 6px 8px;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+}
+
+.date-range-option {
+	border-top: 1px solid #eee;
+	padding-top: 10px;
+}
+
+.date-range-inputs {
+	display: flex;
+	align-items: center;
+}
+
+.date-range-inputs input {
+	flex: 1;
+	width: calc(50% - 10px);
+}
+
+.date-range-inputs span {
+	margin: 0 5px;
+	color: #666;
+}
+
+/* 検索結果モーダル */
+#search-results-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 9999;
+	display: none;
+	overflow: hidden;
+}
+
+.search-results-container {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 90%;
+	max-width: 800px;
+	max-height: 90vh;
+	background: white;
+	border-radius: 6px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.search-results-header {
+	padding: 15px 20px;
+	border-bottom: 1px solid #ddd;
+	background: #f9f9f9;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.search-results-title {
+	font-weight: bold;
+	font-size: 18px;
+}
+
+.search-query {
+	color: #0071a1;
+	font-weight: bold;
+}
+
+.close-search-results {
+	background: none;
+	border: none;
+	font-size: 20px;
+	line-height: 1;
+	padding: 5px;
+	cursor: pointer;
+	color: #666;
+}
+
+.search-results-body {
+	flex-grow: 1;
+	overflow-y: auto;
+	padding: 0;
+	max-height: calc(90vh - 60px); /* ヘッダーの高さを引いたサイズ */
+}
+
+.search-results-content {
+	padding: 15px;
+}
+
+.search-results-loading {
+	padding: 40px;
+	text-align: center;
+	display: none;
+}
+
+.search-results-loading .spinner {
+	display: inline-block;
+	width: 30px;
+	height: 30px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #0071a1;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin-bottom: 10px;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.search-results-empty {
+	padding: 40px;
+	text-align: center;
+	color: #666;
+	font-style: italic;
+}
+
+.search-results-list {
+	padding: 0;
+}
+
+/* リスト表示スタイルの追加 */
+.search-results-list.list-style-display {
+	display: flex;
+	flex-direction: column;
+}
+
+.search-result-item {
+	padding: 15px 20px;
+	border-bottom: 1px solid #eee;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+	background-color: #f5f8fa;
+}
+
+.result-header {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 5px;
+	color: #666;
+	font-size: 12px;
+}
+
+.result-channel {
+	background: #e8f4f9;
+	padding: 2px 6px;
+	border-radius: 3px;
+	color: #0071a1;
+	font-weight: 500;
+}
+
+.result-user {
+	font-weight: bold;
+	margin-bottom: 5px;
+	color: #333;
+}
+
+.result-content {
+	line-height: 1.5;
+	margin-bottom: 10px;
+	word-break: break-word;
+}
+
+.result-attachments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.result-attachment {
+	display: flex;
+	align-items: center;
+	background: #f5f5f5;
+	padding: 5px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+}
+
+.attachment-icon {
+	margin-right: 5px;
+	color: #666;
+}
+
+.result-thread-info {
+	display: flex;
+	align-items: center;
+	color: #0071a1;
+	font-size: 12px;
+}
+
+.thread-count-icon {
+	margin-right: 5px;
+}
+
+/* 検索対象のメッセージがハイライトされるときのスタイル */
+.highlight-message {
+	animation: highlight-fade 3s;
+}
+
+@keyframes highlight-fade {
+	0%,
+	20% {
+		background-color: rgba(255, 243, 148, 0.5);
+	}
+	100% {
+		background-color: transparent;
+	}
+}
+
+/* エラーメッセージ */
+.chat-error-message {
+	background: #f8d7da;
+	color: #721c24;
+	padding: 8px 12px;
+	margin-bottom: 10px;
+	border-radius: 4px;
+	font-size: 14px;
+}

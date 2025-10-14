@@ -1,0 +1,68 @@
+# WordPress テーマ用 .gitignore
+
+# Mac システムファイル
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows システムファイル
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# バックアップファイル
+*.bak
+*.backup
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ログファイル
+*.log
+debug.log
+error.log
+
+# キャッシュファイル
+cache/
+*.cache
+
+# デバッグファイル
+debug-*.php
+debug-*.js
+debug-*.html
+test-*.php
+check-*.php
+
+# 一時ファイル
+temp/
+tmp/
+*.sql
+
+# IDE・エディタ設定ファイル
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node.js（もし使う場合）
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Composer（PHPパッケージマネージャー、もし使う場合）
+vendor/
+composer.phar
+composer.lock
+
+# 環境設定ファイル（機密情報を含む可能性）
+.env
+.env.local
+.env.*.local
+
+# カスタム除外
+# プロジェクト固有で除外したいファイルがあれば、ここに追加してください
+check-parent-message.php
+enable-debug-mode.js

@@ -1,0 +1,130 @@
+/* バッジコンポーネント */
+.badge {
+	display: inline-block;
+	padding: 0.25em 0.6em;
+	font-size: 0.75em;
+	font-weight: 600;
+	line-height: 1;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: baseline;
+	border-radius: 0.375rem;
+	color: var(--color-white);
+	background-color: var(--color-secondary);
+
+	// バッジの種類
+	&.badge-primary {
+		background-color: var(--color-primary);
+	}
+
+	&.badge-success {
+		background-color: var(--color-success);
+	}
+
+	&.badge-error {
+		background-color: var(--color-error);
+	}
+
+	&.badge-warning {
+		background-color: var(--color-warning);
+	}
+
+	&.badge-info {
+		background-color: var(--color-info);
+	}
+
+	// アウトラインバッジ
+	&.badge-outline {
+		background-color: transparent;
+		border: 1px solid currentColor;
+
+		&.badge-primary {
+			color: var(--color-primary);
+		}
+
+		&.badge-success {
+			color: var(--color-success);
+		}
+
+		&.badge-error {
+			color: var(--color-error);
+		}
+
+		&.badge-warning {
+			color: var(--color-warning);
+		}
+
+		&.badge-info {
+			color: var(--color-info);
+		}
+	}
+
+	// サイズバリエーション
+	&.badge-sm {
+		font-size: 0.65em;
+		padding: 0.2em 0.5em;
+	}
+
+	&.badge-lg {
+		font-size: 0.85em;
+		padding: 0.3em 0.7em;
+	}
+
+	// 丸型バッジ
+	&.badge-pill {
+		border-radius: 10rem;
+	}
+
+	// ドットバッジ
+	&.badge-dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		padding: 0;
+		border-radius: 50%;
+		vertical-align: middle;
+	}
+
+	// カウンターバッジ
+	&.badge-counter {
+		position: absolute;
+		top: 0;
+		right: 0;
+		transform: translate(50%, -50%);
+		padding: 0.25em 0.4em;
+		font-size: 0.65em;
+		min-width: 1.5em;
+	}
+
+	// アニメーション付きバッジ
+	&.badge-pulse {
+		position: relative;
+
+		&::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			border-radius: inherit;
+			animation: badgePulse 1.5s ease-in-out infinite;
+			background-color: inherit;
+			z-index: -1;
+		}
+	}
+}
+
+@keyframes badgePulse {
+	0% {
+		transform: scale(1);
+		opacity: 0.8;
+	}
+	50% {
+		transform: scale(1.4);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1.4);
+		opacity: 0;
+	}
+}

@@ -1,0 +1,175 @@
+/* テーブルコンポーネント */
+.table {
+	width: 100%;
+	margin-bottom: 1rem;
+	background-color: var(--color-white);
+	border-collapse: collapse;
+
+	th,
+	td {
+		padding: 1rem;
+		vertical-align: top;
+		border-top: 1px solid var(--color-border);
+		text-align: left;
+	}
+
+	thead th {
+		vertical-align: bottom;
+		border-bottom: 2px solid var(--color-border);
+		background-color: var(--color-background);
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	tbody + tbody {
+		border-top: 2px solid var(--color-border);
+	}
+
+	// ストライプ
+	&.table-striped {
+		tbody tr:nth-of-type(odd) {
+			background-color: rgba(0, 0, 0, 0.02);
+		}
+	}
+
+	// ホバー効果
+	&.table-hover {
+		tbody tr:hover {
+			background-color: rgba(var(--color-primary-rgb), 0.05);
+		}
+	}
+
+	// コンパクト
+	&.table-sm {
+		th,
+		td {
+			padding: 0.5rem;
+		}
+	}
+
+	// ボーダー
+	&.table-bordered {
+		border: 1px solid var(--color-border);
+
+		th,
+		td {
+			border: 1px solid var(--color-border);
+		}
+	}
+
+	// ボーダーレス
+	&.table-borderless {
+		th,
+		td,
+		thead th,
+		tbody + tbody {
+			border: 0;
+		}
+	}
+
+	// レスポンシブテーブル
+	@media (max-width: 768px) {
+		&.table-responsive {
+			display: block;
+			width: 100%;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+
+			thead {
+				display: none;
+			}
+
+			tbody {
+				display: block;
+			}
+
+			tr {
+				display: block;
+				margin-bottom: 1rem;
+				border: 1px solid var(--color-border);
+			}
+
+			td {
+				display: block;
+				text-align: right;
+				padding: 0.5rem 1rem;
+				border: none;
+				border-bottom: 1px solid var(--color-border);
+
+				&::before {
+					content: attr(data-label);
+					float: left;
+					font-weight: 600;
+					color: var(--color-text);
+				}
+
+				&:last-child {
+					border-bottom: none;
+				}
+			}
+		}
+	}
+
+	// ステータス表示
+	.status-cell {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+
+		&::before {
+			content: '';
+			display: inline-block;
+			width: 0.5rem;
+			height: 0.5rem;
+			border-radius: 50%;
+		}
+
+		&.status-active::before {
+			background-color: var(--color-success);
+		}
+
+		&.status-inactive::before {
+			background-color: var(--color-error);
+		}
+
+		&.status-pending::before {
+			background-color: var(--color-warning);
+		}
+	}
+
+	// アクションボタン
+	.action-buttons {
+		display: flex;
+		gap: 0.5rem;
+		justify-content: flex-end;
+
+		button {
+			padding: 0.25rem 0.5rem;
+			font-size: 0.875rem;
+		}
+	}
+
+	// ソート可能なヘッダー
+	.sortable {
+		cursor: pointer;
+		position: relative;
+		padding-right: 1.5rem;
+
+		&::after {
+			content: '↕';
+			position: absolute;
+			right: 0.5rem;
+			color: var(--color-text-secondary);
+		}
+
+		&.sort-asc::after {
+			content: '↑';
+			color: var(--color-primary);
+		}
+
+		&.sort-desc::after {
+			content: '↓';
+			color: var(--color-primary);
+		}
+	}
+}

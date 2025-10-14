@@ -1,0 +1,160 @@
+/**
+ * 404エラーページのスタイル
+ */
+
+.error-404 {
+	min-height: calc(100vh - 60px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 3rem 1.5rem;
+	background: #f5f7fa;
+}
+
+.error-container {
+	max-width: 600px;
+	width: 100%;
+	text-align: center;
+	background: #fff;
+	padding: 3rem 2rem;
+	border-radius: 15px;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.error-image {
+	margin-bottom: 2rem;
+
+	svg {
+		max-width: 100%;
+		height: auto;
+	}
+}
+
+.error-title {
+	font-size: 2rem;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 1rem;
+}
+
+.error-message {
+	font-size: 1.1rem;
+	color: #666;
+	margin-bottom: 2rem;
+	line-height: 1.6;
+}
+
+.error-actions {
+	display: flex;
+	gap: 1rem;
+	justify-content: center;
+	margin-bottom: 3rem;
+
+	.button-primary,
+	.button-secondary {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.8rem 2rem;
+		border-radius: 50px;
+		font-weight: 600;
+		text-decoration: none;
+		transition: all 0.3s ease;
+	}
+
+	.button-primary {
+		background: #40e0d0;
+		color: #fff;
+		box-shadow: 0 2px 8px rgba(64, 224, 208, 0.2);
+
+		&:hover {
+			background: #2ccac0;
+			transform: translateY(-2px);
+			box-shadow: 0 4px 12px rgba(64, 224, 208, 0.3);
+		}
+	}
+
+	.button-secondary {
+		background: #fff;
+		color: #40e0d0;
+		border: 2px solid #40e0d0;
+
+		&:hover {
+			background: rgba(64, 224, 208, 0.1);
+			transform: translateY(-2px);
+		}
+	}
+}
+
+.error-help {
+	text-align: left;
+	border-top: 1px solid #eee;
+	padding-top: 2rem;
+
+	p {
+		color: #666;
+		margin-bottom: 1rem;
+	}
+
+	ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	li {
+		margin-bottom: 0.8rem;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	.help-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: #333;
+		text-decoration: none;
+		transition: color 0.3s ease;
+
+		svg {
+			transition: transform 0.3s ease;
+		}
+
+		&:hover {
+			color: #40e0d0;
+
+			svg {
+				transform: translateX(4px);
+			}
+		}
+	}
+}
+
+@media (max-width: 768px) {
+	.error-404 {
+		padding: 2rem 1rem;
+	}
+
+	.error-container {
+		padding: 2rem 1.5rem;
+	}
+
+	.error-title {
+		font-size: 1.75rem;
+	}
+
+	.error-message {
+		font-size: 1rem;
+	}
+
+	.error-actions {
+		flex-direction: column;
+
+		.button-primary,
+		.button-secondary {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+}

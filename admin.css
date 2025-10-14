@@ -1,0 +1,873 @@
+@charset "UTF-8";
+/* LMS管理画面のスタイル */
+.wp-list-table .column-id {
+  width: 80px;
+}
+.wp-list-table .column-email {
+  width: 25%;
+}
+.wp-list-table .column-display_name {
+  width: 20%;
+}
+.wp-list-table .column-created_at,
+.wp-list-table .column-last_login {
+  width: 15%;
+}
+.wp-list-table .column-actions {
+  width: 100px;
+  text-align: right;
+}
+
+.button-link-delete {
+  color: #ef4444;
+}
+.button-link-delete:hover {
+  color: #f37373;
+}
+
+.search-box {
+  margin: 1rem 0;
+}
+
+.tablenav-pages {
+  margin: 1rem 0;
+  text-align: right;
+}
+
+.pagination-links {
+  margin-left: 1rem;
+}
+.pagination-links a,
+.pagination-links span {
+  padding: 0 0.5rem;
+  text-decoration: none;
+}
+.pagination-links .current {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+}
+.slider.round {
+  border-radius: 34px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2196f3;
+}
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+pre {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.wp-list-table .column-member_id {
+  width: 8%;
+}
+.wp-list-table .column-user_login {
+  width: 12%;
+}
+.wp-list-table .column-display_name {
+  width: 12%;
+}
+.wp-list-table .column-member_type {
+  width: 8%;
+}
+.wp-list-table .column-slack_channel {
+  width: 15%;
+}
+.wp-list-table .column-subscribed_channels {
+  width: 25%;
+}
+.wp-list-table .column-push_status {
+  width: 10%;
+}
+.wp-list-table .column-last_updated {
+  width: 10%;
+}
+
+.status-icon {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.status-icon.status-active {
+  background-color: #46b450;
+}
+.status-icon.status-inactive {
+  background-color: #dc3232;
+}
+
+.channel-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px;
+  border-radius: 12px;
+  background: #e9ecef;
+  font-size: 0.9em;
+}
+.channel-tag.channel-muted {
+  background: #ffd7d7;
+  text-decoration: line-through;
+}
+
+.debug-info {
+  margin: 10px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-left: 4px solid #646970;
+}
+.debug-info h3 {
+  margin-top: 0;
+}
+
+/* 管理画面のスタイル */
+.member-reset-section {
+  margin: 20px 0;
+  padding: 15px;
+  background: #fff;
+  border: 1px solid #ccd0d4;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+.member-reset-section h2 {
+  margin-top: 0;
+}
+
+.delete-button {
+  color: #dc3232;
+  margin-top: 10px;
+}
+
+.edit-dialog {
+  display: none;
+}
+
+.password-fields {
+  display: none;
+}
+
+.admin-label {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+/* 会員管理ページのスタイル */
+/* 編集ダイアログのスタイル */
+#edit-dialog {
+  display: none;
+  /* 保存中メッセージ */
+}
+#edit-dialog .form-field {
+  margin-bottom: 15px;
+}
+#edit-dialog label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+#edit-dialog input[type=text],
+#edit-dialog input[type=email],
+#edit-dialog input[type=password] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+#edit-dialog .required {
+  color: #dc3232;
+}
+#edit-dialog .description {
+  color: #666;
+  font-size: 12px;
+  margin-top: 4px;
+}
+#edit-dialog .save-message {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f0f8ff;
+  border-left: 4px solid #0073aa;
+  color: #444;
+  font-weight: bold;
+  text-align: center;
+}
+#edit-dialog .save-message .spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 10px;
+  background: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"%3E%3Cpath fill="%230073aa" d="M12 22c5.421 0 10-4.579 10-10h-2c0 4.337-3.663 8-8 8s-8-3.663-8-8c0-4.336 3.663-8 8-8V2C6.579 2 2 6.58 2 12c0 5.421 4.579 10 10 10z"%3E%3C/path%3E%3C/svg%3E') no-repeat center center;
+  background-size: 18px;
+  vertical-align: middle;
+  animation: spin 1s infinite linear;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 編集ダイアログのボタン無効化状態 */
+.ui-dialog .ui-dialog-buttonpane button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ボタングループのスタイル */
+.form-field .button {
+  margin-right: 10px;
+}
+
+/* 削除ボタンのスタイル */
+.wp-admin .button.delete-member {
+  color: #dc3232 !important;
+  border-color: #dc3232 !important;
+}
+.wp-admin .button.delete-member:hover {
+  opacity: 0.8;
+}
+.wp-admin .button.delete-member:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 2px rgba(220, 50, 50, 0.2) !important;
+}
+
+/* DataTablesのレイアウト調整 */
+.dataTables_wrapper .dataTables_length {
+  margin-bottom: 15px;
+  float: left;
+}
+.dataTables_wrapper .dataTables_length select {
+  padding: 4px 24px 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin: 0 4px;
+  min-width: 80px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: #fff url('data:image/svg+xml;charset=US-ASCII,<svg width="14" height="8" xmlns="http://www.w3.org/2000/svg"><path d="M13 1L7 7 1 1" stroke="%23666" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 8px center;
+  background-size: 12px;
+}
+.dataTables_wrapper .dataTables_length select::-ms-expand {
+  display: none;
+}
+.dataTables_wrapper .dataTables_length select:hover {
+  border-color: #999;
+}
+.dataTables_wrapper .dataTables_length select:focus {
+  border-color: #0073aa;
+  outline: none;
+  box-shadow: 0 0 0 1px #0073aa;
+}
+.dataTables_wrapper .dataTables_length label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+/* 会員管理ページのその他のスタイル */
+.member-reset-form {
+  margin: 20px 0;
+  padding: 15px;
+  background: #fff;
+  border: 1px solid #ccd0d4;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+.member-reset-form h2 {
+  margin-top: 0;
+}
+.member-reset-form .reset-confirmation {
+  margin: 10px 0;
+}
+.member-reset-form #delete_all_button {
+  color: #dc3232;
+  margin-top: 10px;
+}
+
+/* 会員一覧テーブルのスタイル */
+.member-list-container {
+  margin-top: 20px;
+}
+.member-list-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.member-list-container th,
+.member-list-container td {
+  padding: 8px;
+  border: 1px solid #ddd;
+}
+.member-list-container .save-changes-container {
+  margin-top: 20px;
+  text-align: right;
+}
+
+/* LMS Chat Admin CSS */
+/* WordPress管理画面でのチャット管理機能用スタイル */
+/* メインコンテナ */
+.lms-chat-health-check {
+  margin-top: 20px;
+}
+
+/* カード */
+.lms-chat-health-check .card {
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+.lms-chat-health-check .card h2 {
+  margin-top: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dcdcde;
+}
+
+/* 説明文 */
+.lms-chat-health-check .description {
+  color: #646970;
+  margin: 15px 0;
+  line-height: 1.6;
+}
+
+/* ボタン */
+#run-health-check {
+  font-size: 14px;
+  padding: 8px 16px;
+  height: auto;
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+}
+#run-health-check .dashicons {
+  margin-right: 5px;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+/* プログレス表示 */
+#health-check-progress,
+#repair-progress {
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: #f0f6fc;
+  border: 1px solid #c5d9ed;
+  border-radius: 4px;
+}
+#health-check-progress .spinner,
+#repair-progress .spinner {
+  float: none;
+  margin: 0;
+}
+
+/* 結果表示エリア */
+#health-check-results {
+  margin-top: 20px;
+}
+#health-check-results h3 {
+  margin-top: 0;
+  color: #1d2327;
+}
+
+/* 統計ボックス */
+.stats-box {
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 15px 0;
+}
+.stats-box h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #1d2327;
+}
+
+.stats-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.stats-list li {
+  padding: 5px 0;
+  color: #2c3338;
+}
+
+/* 問題アイテム */
+.issue-item {
+  margin: 15px 0 !important;
+  padding: 12px !important;
+}
+.issue-item h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.issue-item .dashicons {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.issue-item.notice-error .dashicons-warning {
+  color: #d63638;
+}
+.issue-item.notice-warning .dashicons-info {
+  color: #dba617;
+}
+
+/* 詳細表示 */
+.issue-details {
+  margin-top: 10px;
+}
+.issue-details summary {
+  cursor: pointer;
+  color: #2271b1;
+  font-weight: 500;
+  padding: 5px 0;
+}
+.issue-details summary:hover {
+  color: #135e96;
+}
+
+.details-content {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 1px solid #e1e5e9;
+  border-radius: 4px;
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.details-table th,
+.details-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+.details-table th {
+  background: #f1f1f1;
+  font-weight: 600;
+}
+
+/* 修復セクション */
+#repair-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.repair-actions h3 {
+  margin-top: 0;
+  color: #856404;
+}
+.repair-actions p {
+  color: #856404;
+  margin-bottom: 20px;
+}
+
+#repair-database {
+  font-size: 16px;
+  padding: 12px 24px;
+  height: auto;
+  display: inline-flex;
+  align-items: center;
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+#repair-database:hover {
+  background: #e0a800;
+  border-color: #d39e00;
+}
+#repair-database .dashicons {
+  margin-right: 8px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* 修復結果 */
+#repair-results {
+  margin-top: 20px;
+}
+#repair-results h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1d2327;
+}
+#repair-results .notice {
+  margin: 10px 0 !important;
+}
+#repair-results .dashicons {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+#repair-results .dashicons.dashicons-yes-alt {
+  color: #00a32a;
+}
+#repair-results .dashicons.dashicons-no {
+  color: #d63638;
+}
+
+/* 修復詳細 */
+.repair-details {
+  margin-top: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+}
+.repair-details h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #1d2327;
+}
+
+.repair-results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.repair-results-table th,
+.repair-results-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+.repair-results-table th {
+  background: #f1f1f1;
+  font-weight: 600;
+}
+.repair-results-table tr.success {
+  background: #f0f9ff;
+}
+.repair-results-table tr.error {
+  background: #fef2f2;
+}
+.repair-results-table .dashicons {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.repair-results-table .dashicons.dashicons-yes-alt {
+  color: #00a32a;
+}
+.repair-results-table .dashicons.dashicons-no {
+  color: #d63638;
+}
+
+/* 検索アイコンの位置調整 */
+span.dashicons.dashicons-search {
+  vertical-align: middle;
+}
+
+/* 個別修復ボタン */
+.individual-fix-btn {
+  font-size: 13px;
+  padding: 6px 12px;
+  height: auto;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  background: #007cba;
+  border-color: #007cba;
+  color: #fff;
+}
+.individual-fix-btn:hover {
+  background: #005a87;
+  border-color: #005a87;
+  color: #fff;
+}
+.individual-fix-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.individual-fix-btn .dashicons {
+  margin-right: 5px;
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+
+/* 修復完了状態 */
+.issue-item.notice-success {
+  background: #f0f9ff;
+  border-left: 4px solid #00a32a;
+}
+.issue-item.notice-success h4 {
+  color: #00a32a;
+}
+.issue-item.notice-success .dashicons-yes-alt {
+  color: #00a32a;
+}
+
+/* ソフトデリート管理画面のスタイル */
+.stats-container {
+  margin-top: 20px;
+}
+.stats-container table {
+  margin-top: 10px;
+}
+
+.auto-cleanup-container {
+  margin-top: 20px;
+}
+
+.auto-cleanup-status {
+  background: #fff;
+  padding: 15px;
+  border: 1px solid #ccd0d4;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 12px;
+}
+.status-badge.enabled {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.status-badge.disabled {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.preview-section {
+  background: #fff;
+  padding: 15px;
+  border: 1px solid #ccd0d4;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.manual-execution {
+  background: #fff;
+  padding: 15px;
+  border: 1px solid #ccd0d4;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+#manual-cleanup-result {
+  margin-top: 10px;
+}
+
+.deleted-messages-container .message-ellipsis {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#health-check-progress,
+#health-check-results {
+  display: none;
+}
+
+.security-info-panel {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.security-warning {
+  background-color: #ffecec;
+  border-left: 4px solid #dc3232;
+  padding: 10px 15px;
+  margin: 10px 0;
+}
+
+.security-info {
+  background-color: #e7f7ff;
+  border-left: 4px solid #0073aa;
+  padding: 10px 15px;
+  margin: 10px 0;
+}
+
+.security-success {
+  background-color: #ecf7ec;
+  border-left: 4px solid #46b450;
+  padding: 10px 15px;
+  margin: 10px 0;
+}
+
+.security-actions {
+  margin-top: 15px;
+}
+.security-actions form {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.wp-link-warning {
+  color: #dc3232;
+}
+
+#password-fields {
+  display: none;
+}
+
+.cache-health-status.healthy {
+  color: green;
+}
+.cache-health-status.unhealthy {
+  color: red;
+}
+
+.cache-health-issue {
+  color: red;
+}
+
+.grecaptcha-badge {
+  visibility: visible !important;
+}
+
+#test-notification-result {
+  margin-left: 10px;
+}
+
+/* レスポンシブ対応 */
+@media screen and (max-width: 782px) {
+  .stats-list {
+    grid-template-columns: 1fr;
+  }
+  #repair-database {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .details-table,
+  .repair-results-table {
+    font-size: 14px;
+  }
+  .details-table th,
+  .details-table td,
+  .repair-results-table th,
+  .repair-results-table td {
+    padding: 6px 8px;
+  }
+}
+/* Push通知デバッグボタンのdashicons位置調整 */
+.button .dashicons {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+  font-family: dashicons;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+  text-decoration: none !important;
+}
+.button .dashicons.dashicons-database-update, .button .dashicons.dashicons-admin-users, .button .dashicons.dashicons-update {
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* 管理画面全体でのdashiconsの確実な表示 */
+.wp-admin .dashicons {
+  font-family: dashicons;
+  display: inline-block;
+  line-height: 1;
+  font-weight: 400;
+  font-style: normal;
+  speak: none;
+  text-decoration: inherit;
+  text-transform: none;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 特定のdashiconsアイコンの確実な表示 */
+.dashicons-database-update:before {
+  content: "\f463";
+  font-family: dashicons;
+}
+
+/* ボタン内のspan.dashiconsの強制表示 */
+.button span.dashicons {
+  font-family: dashicons !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  margin-right: 5px !important;
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  line-height: 1 !important;
+}/*# sourceMappingURL=admin.css.map */

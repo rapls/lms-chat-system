@@ -1,0 +1,25 @@
+@use '../abstracts/variables' as *;
+
+.wp-list-table {
+	.column-id {
+		width: 80px;
+	}
+
+	.column-email {
+		width: 25%;
+	}
+
+	.column-display_name {
+		width: 20%;
+	}
+
+	.column-created_at,
+	.column-last_login {
+		width: 15%;
+	}
+
+	.column-actions {
+		width: 100px;
+		text-align: right;
+	}
+}

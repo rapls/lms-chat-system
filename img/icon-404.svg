@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 背景の装飾的な要素 -->
+    <circle cx="150" cy="100" r="80" fill="#F5F7FA" />
+    <path d="M50 160C90 120 110 180 150 160C190 140 210 180 250 160" stroke="#E0E7FF" stroke-width="3" />
+
+    <!-- 404テキスト -->
+    <g transform="translate(60, 50)">
+        <!-- 4 -->
+        <path d="M0 45V35L25 0H40V35H50V45H40V60H25V45H0ZM25 15L10 35H25V15Z" fill="#40E0D0" />
+        <!-- 0 -->
+        <path d="M90 0C105 0 115 10 115 25V35C115 50 105 60 90 60C75 60 65 50 65 35V25C65 10 75 0 90 0ZM90 15C85 15 80 18 80 25V35C80 42 85 45 90 45C95 45 100 42 100 35V25C100 18 95 15 90 15Z" fill="#40E0D0" />
+        <!-- 4 -->
+        <path d="M130 45V35L155 0H170V35H180V45H170V60H155V45H130ZM155 15L140 35H155V15Z" fill="#40E0D0" />
+    </g>
+
+    <!-- 装飾的な要素 -->
+    <circle cx="50" cy="40" r="8" fill="#40E0D0" opacity="0.3" />
+    <circle cx="250" cy="150" r="6" fill="#40E0D0" opacity="0.3" />
+    <circle cx="230" cy="30" r="4" fill="#40E0D0" opacity="0.3" />
+
+    <!-- アクセントライン -->
+    <path d="M40 120C80 100 120 140 160 120C200 100 240 140 260 120"
+        stroke="#40E0D0" stroke-width="2" stroke-dasharray="4 4" />
+
+    <!-- インタラクティブな要素を示唆する波紋 -->
+    <circle cx="150" cy="100" r="60" stroke="#40E0D0" stroke-width="1" opacity="0.2">
+        <animate attributeName="r" values="55;65;55" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.3;0.1;0.3" dur="3s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="150" cy="100" r="70" stroke="#40E0D0" stroke-width="1" opacity="0.1">
+        <animate attributeName="r" values="65;75;65" dur="3s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.2;0.05;0.2" dur="3s" repeatCount="indefinite" />
+    </circle>
+</svg>

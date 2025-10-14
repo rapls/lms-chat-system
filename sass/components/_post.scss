@@ -1,0 +1,123 @@
+@import '../abstracts/variables';
+
+/**
+ * 投稿コンテンツのスタイル
+ */
+.entry-header {
+	margin-bottom: $spacing-xl;
+}
+
+.entry-title {
+	font-size: 2em;
+	margin: 0 0 $spacing-xs;
+	color: $color-text-primary;
+
+	a {
+		color: $color-text-primary;
+		text-decoration: none;
+		transition: $transition-base;
+
+		&:hover {
+			color: $color-primary;
+		}
+	}
+}
+
+.entry-meta {
+	font-size: 0.9em;
+	color: $color-text-secondary;
+	margin-bottom: $spacing-md;
+
+	span {
+		margin-right: $spacing-md;
+	}
+
+	@media (max-width: $breakpoint-md) {
+		span {
+			display: block;
+			margin-bottom: $spacing-xs;
+		}
+	}
+}
+
+.post-thumbnail {
+	margin-bottom: $spacing-lg;
+
+	img {
+		max-width: 100%;
+		height: auto;
+		display: block;
+		border-radius: $border-radius;
+	}
+}
+
+.entry-content {
+	line-height: 1.8;
+	color: $color-text-primary;
+	margin-bottom: $spacing-lg;
+
+	p {
+		margin-bottom: $spacing-lg;
+	}
+}
+
+.read-more {
+	margin-top: $spacing-md;
+}
+
+.more-link {
+	display: inline-block;
+	padding: $spacing-xs $spacing-md;
+	background: $color-primary;
+	color: $color-white;
+	text-decoration: none;
+	border-radius: $border-radius;
+	transition: $transition-base;
+
+	&:hover {
+		background: darken($color-primary, 10%);
+	}
+}
+
+.entry-footer {
+	margin-top: $spacing-lg;
+	padding-top: $spacing-md;
+	border-top: 1px solid $color-border;
+	font-size: 0.9em;
+	color: $color-text-secondary;
+
+	span {
+		display: block;
+		margin-bottom: $spacing-xs;
+	}
+}
+
+.cat-links,
+.tags-links {
+	a {
+		color: $color-primary;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}
+
+.site-main article {
+	margin-bottom: $spacing-xl;
+	padding-bottom: $spacing-lg;
+	border-bottom: 1px solid $color-border;
+
+	&:last-child {
+		border-bottom: none;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+}
+
+@media (max-width: $breakpoint-md) {
+	.entry-title {
+		font-size: 1.5em;
+	}
+}

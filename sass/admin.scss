@@ -1,0 +1,11 @@
+@charset "UTF-8";
+
+/* LMS管理画面のスタイル */
+@use 'abstracts/variables' as *;
+@use 'admin/tables';
+@use 'admin/buttons';
+@use 'admin/pagination';
+@use 'admin/push-notification';
+
+/* 管理画面のスタイル */
+@use 'admin/admin';
