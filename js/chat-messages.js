@@ -6499,6 +6499,7 @@
 					if (infinityScrollState) {
 						infinityScrollState.hasReachedEnd = true;
 						infinityScrollState.hasReachedNewest = false;
+						infinityScrollState.endMessageShown = false;
 						
 						// 最新のメッセージIDを設定
 						const $lastMessage = $('#chat-messages .chat-message').last();
@@ -6506,6 +6507,9 @@
 							infinityScrollState.newestMessageId = $lastMessage.data('message-id');
 						}
 					}
+					
+					// 「これ以上古いメッセージはありません」を表示
+					showEndOfHistoryMessage();
 					
 					setTimeout(() => {
 						const $messageContainer = $('#chat-messages');
