@@ -56,7 +56,7 @@
 
 		const enforceScroll = (e) => {
 			if (scrollAnchor === null) return;
-			
+
 			// 🔥 SCROLL FLICKER FIX: scrollイベント自体をキャンセル
 			if (e && e.preventDefault) {
 				e.preventDefault();
@@ -67,7 +67,7 @@
 			if (e && e.stopImmediatePropagation) {
 				e.stopImmediatePropagation();
 			}
-			
+
 			// スクロール位置が変わっていたら強制的に戻す
 			if (container && Math.abs(container.scrollTop - scrollAnchor) > 1) {
 				// 無限ループ防止：scrollイベントリスナーを一時的に削除
@@ -121,7 +121,7 @@
 			},
 			isLocked() {
 				return lockCount > 0;
-			}
+			},
 		};
 	})();
 	window.LMSChat.channelSwitchGuard = ChannelSwitchGuard;
@@ -160,9 +160,9 @@
 		const allReactions = new Map();
 
 		// 全コンテナからリアクションを収集
-		$allContainers.each(function() {
+		$allContainers.each(function () {
 			const $container = $(this);
-			$container.find('.reaction-item').each(function() {
+			$container.find('.reaction-item').each(function () {
 				const $item = $(this);
 				const emoji = $item.data('emoji') || $item.attr('data-emoji');
 				if (emoji) {
@@ -185,7 +185,9 @@
 		// プライマリコンテナに統合されたリアクションを配置
 		$primary.empty();
 		allReactions.forEach((count, emoji) => {
-			const $reactionItem = $(`<span class="reaction-item" data-emoji="${emoji}">${emoji} ${count}</span>`);
+			const $reactionItem = $(
+				`<span class="reaction-item" data-emoji="${emoji}">${emoji} ${count}</span>`
+			);
 			$primary.append($reactionItem);
 		});
 
@@ -214,7 +216,7 @@
 		let maxCount = 0;
 		let bestThreadInfo = null;
 
-		$allThreadInfos.each(function() {
+		$allThreadInfos.each(function () {
 			const $threadInfo = $(this);
 			const countText = $threadInfo.find('.thread-reply-count').text() || '';
 			const countMatch = countText.match(/(\d+)/);
@@ -301,7 +303,7 @@
 		const $allMessages = $('#chat-messages .chat-message[data-message-id]');
 		let cleanedCount = 0;
 
-		$allMessages.each(function() {
+		$allMessages.each(function () {
 			const $message = $(this);
 			const messageId = $message.data('message-id');
 
@@ -330,7 +332,7 @@
 		ensureUniqueThreadInfo,
 		safeAddReactionContainer,
 		safeAddThreadInfo,
-		performDriftCleanup
+		performDriftCleanup,
 	};
 
 	// 10秒おきにドリフトクリーンアップを実行
@@ -624,11 +626,7 @@
 		}
 	};
 	const handleLongPollMessage = (data) => {
-		const messageId =
-			data?.messageId ||
-			data?.id ||
-			data?.payload?.id ||
-			data?.payload?.messageId;
+		const messageId = data?.messageId || data?.id || data?.payload?.id || data?.payload?.messageId;
 
 		if (!data.payload || !messageId) {
 			return;
@@ -760,8 +758,8 @@
 					}
 					$tempMsg.removeClass('pending-message temp-message');
 					$tempMsg.css({
-					opacity: '1',
-					'background-color': '',
+						opacity: '1',
+						'background-color': '',
 					});
 					messageIdTracker.markAsDisplayed(messageId);
 				});
@@ -875,11 +873,7 @@
 	const processedMessageDeletions = new Set();
 	const handleLongPollDeleteMessage = (data) => {
 		const channelId = data.channelId || data.payload?.channel_id || data.payload?.channelId;
-		const messageId =
-			data.messageId ||
-			data.id ||
-			data.payload?.id ||
-			data.payload?.messageId;
+		const messageId = data.messageId || data.id || data.payload?.id || data.payload?.messageId;
 		if (messageId) {
 			messageIdTracker.removeFromDisplayed(messageId);
 		}
@@ -1379,11 +1373,7 @@
 						<span class="thread-reply-count">${count}件の返信</span>
 						${unreadBadge}
 					</div>
-					${
-						latestReply
-							? `<div class="thread-info-latest">最終返信: ${latestReply}</div>`
-							: ''
-					}
+					${latestReply ? `<div class="thread-info-latest">最終返信: ${latestReply}</div>` : ''}
 				</div>
 			</div>
 		`;
@@ -1525,46 +1515,46 @@
 				if (hasThread && threadInfoHtml.length === 0) {
 				}
 			}
-		const ensureReactionHydrationAttribute = (html, hydratedValue) => {
-			if (!html || typeof html !== 'string') {
-				return html;
-			}
-			if (html.includes('data-reactions-hydrated')) {
-				return html;
-			}
-			return html.replace(
-				/<div class="message-reactions([^>]*)>/,
-				`<div class="message-reactions$1" data-reactions-hydrated="${hydratedValue ? '1' : '0'}">`
-			);
-		};
-		let reactionsHtml = '';
-		let reactionsHydrated = false;
-		if (message.reactions && message.reactions.length > 0) {
-			if (!window.LMSChat.reactions) window.LMSChat.reactions = {};
-			if (typeof window.LMSChat.reactions.createReactionsHtml !== 'function') {
-				window.LMSChat.reactions.createReactionsHtml = createFallbackReactionsHtml;
-			}
-			if (typeof window.LMSChat.reactions.createReactionsHtml === 'function') {
-				try {
-					reactionsHtml = window.LMSChat.reactions.createReactionsHtml(message.reactions);
-					reactionsHydrated = reactionsHtml !== '';
-				} catch (error) {
-					// エラーを無視
+			const ensureReactionHydrationAttribute = (html, hydratedValue) => {
+				if (!html || typeof html !== 'string') {
+					return html;
+				}
+				if (html.includes('data-reactions-hydrated')) {
+					return html;
+				}
+				return html.replace(
+					/<div class="message-reactions([^>]*)>/,
+					`<div class="message-reactions$1" data-reactions-hydrated="${hydratedValue ? '1' : '0'}">`
+				);
+			};
+			let reactionsHtml = '';
+			let reactionsHydrated = false;
+			if (message.reactions && message.reactions.length > 0) {
+				if (!window.LMSChat.reactions) window.LMSChat.reactions = {};
+				if (typeof window.LMSChat.reactions.createReactionsHtml !== 'function') {
+					window.LMSChat.reactions.createReactionsHtml = createFallbackReactionsHtml;
+				}
+				if (typeof window.LMSChat.reactions.createReactionsHtml === 'function') {
+					try {
+						reactionsHtml = window.LMSChat.reactions.createReactionsHtml(message.reactions);
+						reactionsHydrated = reactionsHtml !== '';
+					} catch (error) {
+						// エラーを無視
+						reactionsHtml = createFallbackReactionsHtml(message.reactions);
+						reactionsHydrated = reactionsHtml !== '';
+					}
+				} else {
 					reactionsHtml = createFallbackReactionsHtml(message.reactions);
 					reactionsHydrated = reactionsHtml !== '';
 				}
 			} else {
-				reactionsHtml = createFallbackReactionsHtml(message.reactions);
-				reactionsHydrated = reactionsHtml !== '';
 			}
-		} else {
-		}
-		if (reactionsHtml) {
-			reactionsHtml = ensureReactionHydrationAttribute(reactionsHtml, reactionsHydrated);
-		} else {
-			// 空のリアクションコンテナは作成しない（高さ変化を防ぐため）
-			reactionsHtml = '';
-		}
+			if (reactionsHtml) {
+				reactionsHtml = ensureReactionHydrationAttribute(reactionsHtml, reactionsHydrated);
+			} else {
+				// 空のリアクションコンテナは作成しない（高さ変化を防ぐため）
+				reactionsHtml = '';
+			}
 			const messageActionsHtml = `
 				<div class="message-actions">
 					<button class="action-button add-reaction" aria-label="リアクションを追加">
@@ -1746,7 +1736,7 @@
 				const hydrated =
 					$primary.length > 0 &&
 					($primary.data('reactionsHydrated') === true ||
-					$primary.attr('data-reactions-hydrated') === '1');
+						$primary.attr('data-reactions-hydrated') === '1');
 				return {
 					$container: $primary,
 					hasItems,
@@ -1768,10 +1758,15 @@
 			}
 			const isPending = $messageElement.data('reactionHydrationPending') === true;
 			const needsReactionHydration =
-				initialState.$container.length === 0 || (!initialState.hasItems && !initialState.isHydrated);
+				initialState.$container.length === 0 ||
+				(!initialState.hasItems && !initialState.isHydrated);
 
 			// 既に空のコンテナがある場合は削除
-			if (initialState.$container.length > 0 && !initialState.hasItems && !initialState.isHydrated) {
+			if (
+				initialState.$container.length > 0 &&
+				!initialState.hasItems &&
+				!initialState.isHydrated
+			) {
 				initialState.$container.remove();
 			}
 
@@ -1819,7 +1814,10 @@
 								// 再度確認 - 非同期処理中に他の処理で追加された可能性があるため
 								const finalCheck = ensureUniqueReactionContainer($messageElement);
 								if (!finalCheck || finalCheck.length === 0) {
-									const $renderedReactions = safeAddReactionContainer($messageElement, reactionsHtml);
+									const $renderedReactions = safeAddReactionContainer(
+										$messageElement,
+										reactionsHtml
+									);
 									if ($renderedReactions) {
 										markReactionsHydrated($renderedReactions);
 									}
@@ -1875,7 +1873,7 @@
 			const batch = messageIds.slice(i, i + 5);
 
 			// 各バッチ処理の前に既存の重複を削除
-			$('#chat-messages .chat-message').each(function() {
+			$('#chat-messages .chat-message').each(function () {
 				ensureUniqueReactionContainer($(this));
 				ensureUniqueThreadInfo($(this));
 			});
@@ -1926,7 +1924,7 @@
 							latest_reply: thread.latest_reply || '',
 							timestamp: Date.now(),
 							priority: 'high',
-							confirmed: true
+							confirmed: true,
 						};
 						state.threadInfoCache.set(thread.parent_message_id, threadInfo);
 					}
@@ -2032,7 +2030,7 @@
 
 					// 🔥 SCROLL FLICKER FIX: 画像読み込み完了を待機（スクロール前に完了）
 					const images = $messageContainer.find('img').toArray();
-					const imagePromises = images.map(img => {
+					const imagePromises = images.map((img) => {
 						return new Promise((resolve) => {
 							if (img.complete) {
 								resolve();
@@ -2045,9 +2043,9 @@
 
 					// 🔥 SCROLL FLICKER FIX: すべての画像読み込みを完全に待つ（タイムアウトなし）
 					await Promise.all(imagePromises);
-					
+
 					// 🔥 SCROLL FLICKER FIX: DOM高さが安定するまで少し待つ
-					await new Promise(resolve => setTimeout(resolve, 50));
+					await new Promise((resolve) => setTimeout(resolve, 50));
 
 					// 🔥 SCROLL FLICKER FIX: ここで全てのDOM更新が完了している
 					// この時点でscrollHeightは確定しており、以降変更されない
@@ -2088,7 +2086,7 @@
 			// 🔥 SCROLL FLICKER FIX: スレッド情報更新は既にLine 1933-1947で完了しているため、
 			// スクロール処理後の重複更新を全て削除（5回の重複を削除）
 			$(document).trigger('messages:displayed', [data.messages, isNewMessages, isChannelSwitch]);
-			
+
 			// 🔥 SCROLL FLICKER FIX: .loading-messagesの削除を即座に実行（setTimeoutを削除）
 			const $remainingLoading = $('#chat-messages .loading-messages');
 			if ($remainingLoading.length > 0) {
@@ -3243,16 +3241,18 @@
 
 				// 他のタブ/ウィンドウへの同期通知
 				try {
-					localStorage.setItem('lms_message_sync', JSON.stringify({
-						type: 'message_created',
-						data: messageData,
-						timestamp: Date.now()
-					}));
+					localStorage.setItem(
+						'lms_message_sync',
+						JSON.stringify({
+							type: 'message_created',
+							data: messageData,
+							timestamp: Date.now(),
+						})
+					);
 					setTimeout(() => {
 						localStorage.removeItem('lms_message_sync');
 					}, 1000);
-				} catch (e) {
-				}
+				} catch (e) {}
 				updateSendButtonState();
 				const $messageContainer = $('#chat-messages');
 				if (window.LMSChat.state) {
@@ -4219,10 +4219,10 @@
 	};
 	const scrollToBottom = (delay = 0, force = false, disableAutoScrollAfter = false) => {
 		// スレッドモーダルが開いている間はメインチャットをスクロールしない
-		if ($('.thread-panel').hasClass('open') || (window.LMSChat?.state?.currentThread)) {
+		if ($('.thread-panel').hasClass('open') || window.LMSChat?.state?.currentThread) {
 			return;
 		}
-		
+
 		if (force) {
 			const $messageContainer = $('#chat-messages');
 			if (!$messageContainer.length) return;
@@ -5578,57 +5578,57 @@
 		$(document)
 			.off('click', '.delete-message')
 			.on('click', '.delete-message', function (e) {
-			e.preventDefault();
-			e.stopPropagation();
-			e.stopImmediatePropagation(); // 他のハンドラーも停止
-			
-			const $button = $(this);
-			
-			// data属性で確認中フラグをチェック（最優先）
-			if ($button.attr('data-confirming') === 'true') {
-				return false;
-			}
-			
-			// 既に処理中の場合は何もしない（重複防止）
-			if ($button.hasClass('deleting') || $button.prop('disabled')) {
-				return false;
-			}
-			
-			// 確認中フラグを設定
-			$button.attr('data-confirming', 'true');
-			
-			// ボタンを即座に無効化
-			$button.addClass('deleting').prop('disabled', true);
-			
-			const $message = $button.closest('.chat-message, .thread-message');
-			if (!$message.length) {
-				$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
-				return false;
-			}
-			const messageId = $message.data('message-id');
-			if (!messageId) {
-				$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
-				return false;
-			}
-			if ($message.hasClass('thread-message')) {
-				$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
-				return false;
-			}
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation(); // 他のハンドラーも停止
 
-			const hasThreadInDOM =
-				$message.hasClass('has-thread') || $message.find('.thread-info').length > 0;
+				const $button = $(this);
 
-			if (hasThreadInDOM) {
-				showThreadDeleteWarning();
-				// ボタンを再度有効化
-				$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
-			} else {
-				showDeleteConfirmDialog(messageId, $message, $button);
-			}
-			
-			return false; // イベントの伝播を完全に停止
-		});
-		
+				// data属性で確認中フラグをチェック（最優先）
+				if ($button.attr('data-confirming') === 'true') {
+					return false;
+				}
+
+				// 既に処理中の場合は何もしない（重複防止）
+				if ($button.hasClass('deleting') || $button.prop('disabled')) {
+					return false;
+				}
+
+				// 確認中フラグを設定
+				$button.attr('data-confirming', 'true');
+
+				// ボタンを即座に無効化
+				$button.addClass('deleting').prop('disabled', true);
+
+				const $message = $button.closest('.chat-message, .thread-message');
+				if (!$message.length) {
+					$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
+					return false;
+				}
+				const messageId = $message.data('message-id');
+				if (!messageId) {
+					$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
+					return false;
+				}
+				if ($message.hasClass('thread-message')) {
+					$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
+					return false;
+				}
+
+				const hasThreadInDOM =
+					$message.hasClass('has-thread') || $message.find('.thread-info').length > 0;
+
+				if (hasThreadInDOM) {
+					showThreadDeleteWarning();
+					// ボタンを再度有効化
+					$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
+				} else {
+					showDeleteConfirmDialog(messageId, $message, $button);
+				}
+
+				return false; // イベントの伝播を完全に停止
+			});
+
 		setTimeout(() => {
 			$('.chat-message').each(function () {
 				const $message = $(this);
@@ -6379,7 +6379,9 @@
 		try {
 			disableThreadProtection();
 			const $messageContainer = $('#chat-messages');
-			$messageContainer.empty().html('<div class="loading-messages">読み込み中...</div>');
+			$messageContainer
+				.empty()
+				.html('<div class="loading-messages loading-indicator">読み込み中...</div>');
 			if (window.LMSChat && window.LMSChat.cache) {
 				window.LMSChat.cache.clearMessagesCache(state.currentChannel);
 			}
@@ -6500,17 +6502,17 @@
 						infinityScrollState.hasReachedEnd = true;
 						infinityScrollState.hasReachedNewest = false;
 						infinityScrollState.endMessageShown = false;
-						
+
 						// 最新のメッセージIDを設定
 						const $lastMessage = $('#chat-messages .chat-message').last();
 						if ($lastMessage.length) {
 							infinityScrollState.newestMessageId = $lastMessage.data('message-id');
 						}
 					}
-					
+
 					// 「これ以上古いメッセージはありません」を表示
 					showEndOfHistoryMessage();
-					
+
 					setTimeout(() => {
 						const $messageContainer = $('#chat-messages');
 						$messageContainer.scrollTop(0);
@@ -6950,7 +6952,10 @@
 			},
 			queueUpdate(messageId, $message, threadInfo) {
 				// 🔍 DEBUG: キューに追加される前のデータを記録
-				const avatarCount = threadInfo && threadInfo.avatars && Array.isArray(threadInfo.avatars) ? threadInfo.avatars.length : 0;
+				const avatarCount =
+					threadInfo && threadInfo.avatars && Array.isArray(threadInfo.avatars)
+						? threadInfo.avatars.length
+						: 0;
 
 				const isForceDelete = threadInfo && parseInt(threadInfo.total, 10) === 0;
 				if (this.globalLock.has(messageId) && !isForceDelete) {
@@ -6985,12 +6990,12 @@
 						return;
 					}
 				}
-				
+
 				this.processingQueue.add(messageId);
 				this.globalLock.add(messageId);
 
 				// 🔥 SCROLL FLICKER FIX: チャンネル切り替え中は遅延なしで即座に実行
-				const delay = (state.isChannelSwitching) ? 0 : 10;
+				const delay = state.isChannelSwitching ? 0 : 10;
 
 				setTimeout(() => {
 					try {
@@ -7021,7 +7026,8 @@
 					}
 
 					// 🔍 DEBUG: どこから呼ばれているか、どんなデータが渡されているかを記録
-					const avatarCount = threadInfo.avatars && Array.isArray(threadInfo.avatars) ? threadInfo.avatars.length : 0;
+					const avatarCount =
+						threadInfo.avatars && Array.isArray(threadInfo.avatars) ? threadInfo.avatars.length : 0;
 					const caller = new Error().stack.split('\n')[2]?.trim() || 'unknown';
 
 					// 🔥 SCROLL FLICKER FIX: スクロール直後（200-1000ms）はDOM更新をスキップ
@@ -7039,15 +7045,22 @@
 						// キャッシュに優先度の高いデータがある場合
 						if (cachedInfo.priority === 'high' && cachedInfo.confirmed === true) {
 							// 渡されたデータに優先度がない、またはキャッシュの方が新しい場合
-							if (!threadInfo.priority || !threadInfo.confirmed ||
-								(cachedInfo.timestamp && (!threadInfo.timestamp || cachedInfo.timestamp > threadInfo.timestamp))) {
+							if (
+								!threadInfo.priority ||
+								!threadInfo.confirmed ||
+								(cachedInfo.timestamp &&
+									(!threadInfo.timestamp || cachedInfo.timestamp > threadInfo.timestamp))
+							) {
 								threadInfo = { ...cachedInfo };
 							}
 						}
 					}
 
 					// 🔥 NEW FIX: avatarsが空でpriorityもない場合はスキップ（ロングポーリング更新を待つ）
-					const hasAvatars = threadInfo.avatars && Array.isArray(threadInfo.avatars) && threadInfo.avatars.length > 0;
+					const hasAvatars =
+						threadInfo.avatars &&
+						Array.isArray(threadInfo.avatars) &&
+						threadInfo.avatars.length > 0;
 					const isPriority = threadInfo.priority === 'high' && threadInfo.confirmed === true;
 					if (!hasAvatars && !isPriority && (threadInfo.total > 0 || !threadInfo.total)) {
 						return;
@@ -7063,7 +7076,10 @@
 
 					// 初回ロード完了後は常にスクロール位置を保持（時間制限なし）
 					// ただし、既に最下部にいる場合は復元不要
-					const shouldPreserveScroll = (state.firstLoadComplete !== null && state.firstLoadComplete !== undefined) && !isAlreadyAtBottom;
+					const shouldPreserveScroll =
+						state.firstLoadComplete !== null &&
+						state.firstLoadComplete !== undefined &&
+						!isAlreadyAtBottom;
 
 					let total = threadInfo.total;
 					if (typeof total === 'object') {
@@ -7129,7 +7145,6 @@
 						});
 					}
 					if (sanitizedThreadInfo.total > 0) {
-
 						const threadInfoHtml = generateThreadInfoHtml(
 							messageId,
 							sanitizedThreadInfo.total,
@@ -7161,19 +7176,22 @@
 
 							// アイコンが存在しない場合は生成
 							if (!iconHtml) {
-								const utils = window.LMSChat && window.LMSChat.utils
-									? window.LMSChat.utils
-									: {
-										getAssetPath: (path) => path.replace('wp-content/themes/lms/', '/wp-content/themes/lms/')
-									};
-								iconHtml = `<img src="${utils.getAssetPath('wp-content/themes/lms/img/icon-thread.svg')}" alt="" class="thread-icon">`;
+								const utils =
+									window.LMSChat && window.LMSChat.utils
+										? window.LMSChat.utils
+										: {
+												getAssetPath: (path) =>
+													path.replace('wp-content/themes/lms/', '/wp-content/themes/lms/'),
+										  };
+								iconHtml = `<img src="${utils.getAssetPath(
+									'wp-content/themes/lms/img/icon-thread.svg'
+								)}" alt="" class="thread-icon">`;
 							}
 
 							$threadButton.empty();
 							$threadButton.append(iconHtml);
 							$threadButton.append(`<span class="thread-text">${newButtonText}</span>`);
 							$threadButton.addClass('thread-button-active');
-
 						}
 						const $finalThreadInfos = $message.find('.thread-info');
 						if ($finalThreadInfos.length > 1) {
@@ -7202,15 +7220,12 @@
 						const heightDiff = scrollHeightAfter - scrollHeightBefore;
 						const scrollDiff = scrollTopAfter - scrollTopBefore;
 
-
 						// スクロール位置が変わっていたら、元に戻す
 						if (Math.abs(scrollDiff) > 1) {
 							$messageContainer.scrollTop(scrollTopBefore);
 						}
 					}
-
-				} catch (error) {
-				}
+				} catch (error) {}
 			},
 		};
 		window.ThreadInfoUpdateManager.init();
@@ -7230,13 +7245,12 @@
 			}
 
 			window.ThreadInfoUpdateManager.queueUpdate(messageId, $message, threadInfo);
-		} catch (error) {
-		}
+		} catch (error) {}
 	};
 	const restoreThreadInfoFromCache = () => {
 		// 🔥 FLICKER FIX: チャンネル切り替え直後はスキップ
 		if (!state.threadInfoCache || state.isChannelSwitching) return;
-		
+
 		// 🔥 FLICKER FIX: スクロール完了から1000ms以内はスキップ
 		if (state.firstLoadComplete) {
 			const timeSinceScroll = Date.now() - state.firstLoadComplete;
@@ -7252,9 +7266,11 @@
 				if ($message.length) {
 					const $existingThreadInfo = $message.find('.thread-info');
 					// 🔥 FLICKER FIX: priority: 'high'のデータは上書きしない
-					if ($existingThreadInfo.length === 0 ||
+					if (
+						$existingThreadInfo.length === 0 ||
 						!$existingThreadInfo.data('priority') ||
-						$existingThreadInfo.data('priority') !== 'high') {
+						$existingThreadInfo.data('priority') !== 'high'
+					) {
 						updateMessageThreadInfo($message, threadInfo);
 						restoredCount++;
 					}
@@ -7362,7 +7378,7 @@
 		if (state.isChannelSwitching) {
 			return;
 		}
-		
+
 		// 🔥 FLICKER FIX: スクロール完了から1000ms以内はスキップ
 		if (state.firstLoadComplete) {
 			const timeSinceScroll = Date.now() - state.firstLoadComplete;
@@ -7830,7 +7846,10 @@
 					window.LMSChat.state.isInfinityScrollLoading = false;
 				}
 
-				$loader.fadeOut(200).remove();
+				// ローダーを確実に削除（フェードアウト完了後）
+				$loader.fadeOut(200, function() {
+					$(this).remove();
+				});
 			});
 	};
 
@@ -7861,7 +7880,12 @@
 			window.LMSChat.state.isInfinityScrollLoading = true;
 		}
 
-		const $loader = $('<div class="loading-indicator bottom-loader">新しいメッセージを読み込み中...</div>');
+		// 既存のローダーを削除（重複防止）
+		$('.bottom-loader').remove();
+
+		const $loader = $(
+			'<div class="loading-indicator bottom-loader">新しいメッセージを読み込み中...</div>'
+		);
 		$('#chat-messages').append($loader);
 
 		const loadCount = INFINITY_SCROLL_CONFIG.LOAD_MORE_COUNT;
@@ -7912,7 +7936,10 @@
 					window.LMSChat.state.isInfinityScrollLoading = false;
 				}
 
-				$loader.fadeOut(200).remove();
+				// ローダーを確実に削除（フェードアウト完了後）
+				$loader.fadeOut(200, function() {
+					$(this).remove();
+				});
 			});
 	};
 
@@ -8416,7 +8443,10 @@
 							);
 
 							if ($reactionsContainer.length === 0) {
-								safeAddReactionContainer($messageElement, '<div class="message-reactions" data-reactions-hydrated="1"></div>');
+								safeAddReactionContainer(
+									$messageElement,
+									'<div class="message-reactions" data-reactions-hydrated="1"></div>'
+								);
 								$reactionsContainer = $messageElement.find('.message-reactions');
 							} else {
 							}
@@ -9478,7 +9508,7 @@
 		if ($button && $button.attr('data-confirming') !== 'true') {
 			return;
 		}
-		
+
 		// confirm関数の重複呼び出しを完全にブロック
 		const confirmKey = 'delete_confirm_' + messageId;
 		if (window[confirmKey]) {
@@ -9488,7 +9518,7 @@
 			return;
 		}
 		window[confirmKey] = true;
-		
+
 		// 重複防止フラグ
 		if (window.LMS_DELETING_MESSAGE === messageId) {
 			// ボタンを再度有効化
@@ -9499,7 +9529,7 @@
 			return;
 		}
 		window.LMS_DELETING_MESSAGE = messageId;
-		
+
 		if (confirm('このメッセージを削除しますか？')) {
 			processDeleteMessage(messageId, $message);
 		} else {
@@ -9509,7 +9539,7 @@
 				$button.attr('data-confirming', 'false').removeClass('deleting').prop('disabled', false);
 			}
 		}
-		
+
 		// 処理完了後にフラグをクリア
 		setTimeout(() => {
 			window.LMS_DELETING_MESSAGE = null;
@@ -9618,7 +9648,9 @@
 		}, 10);
 	};
 	const showThreadDeleteWarning = () => {
-		alert('返信メッセージのついたメッセージは削除できません。\n返信メッセージをすべて削除してから親メッセージを削除してください。');
+		alert(
+			'返信メッセージのついたメッセージは削除できません。\n返信メッセージをすべて削除してから親メッセージを削除してください。'
+		);
 	};
 	const deleteMessage = async (messageId, isThread = false) => {
 		if (!messageId) {
@@ -9972,25 +10004,27 @@
 				window.LMSLongPoll.notifyMessageDeleted({
 					id: messageId,
 					isThread: isThread,
-					parentMessageId: parentMessageId
+					parentMessageId: parentMessageId,
 				});
 			}
 
 			// 他のタブ/ウィンドウへの削除同期通知
 			try {
-				localStorage.setItem('lms_message_sync', JSON.stringify({
-					type: isThread ? 'thread_message_deleted' : 'message_deleted',
-					data: {
-						id: messageId,
-						parentMessageId: parentMessageId
-					},
-					timestamp: Date.now()
-				}));
+				localStorage.setItem(
+					'lms_message_sync',
+					JSON.stringify({
+						type: isThread ? 'thread_message_deleted' : 'message_deleted',
+						data: {
+							id: messageId,
+							parentMessageId: parentMessageId,
+						},
+						timestamp: Date.now(),
+					})
+				);
 				setTimeout(() => {
 					localStorage.removeItem('lms_message_sync');
 				}, 1000);
-			} catch (e) {
-			}
+			} catch (e) {}
 			if (isThread && parentMessageId) {
 				$(document).trigger('thread:message_deleted', {
 					messageId,
@@ -10688,7 +10722,7 @@
 	$(() => {
 		// 🔥 SCROLL FIX: jQuery .animate() によるスクロールアニメーションをブロック
 		const originalAnimate = $.fn.animate;
-		$.fn.animate = function(properties, duration, easing, complete) {
+		$.fn.animate = function (properties, duration, easing, complete) {
 			// #chat-messagesへのscrollTopアニメーションをブロック
 			if (this.attr('id') === 'chat-messages' && properties && 'scrollTop' in properties) {
 				if (state.firstLoadComplete !== null && state.firstLoadComplete !== undefined) {
@@ -10713,13 +10747,16 @@
 			const container = document.getElementById('chat-messages');
 			if (!container) return;
 
-			const originalScrollTopDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+			const originalScrollTopDescriptor = Object.getOwnPropertyDescriptor(
+				Element.prototype,
+				'scrollTop'
+			);
 
 			Object.defineProperty(container, 'scrollTop', {
-				get: function() {
+				get: function () {
 					return originalScrollTopDescriptor.get.call(this);
 				},
-				set: function(value) {
+				set: function (value) {
 					if (state.firstLoadComplete !== null && state.firstLoadComplete !== undefined) {
 						const timeSinceLoad = Date.now() - state.firstLoadComplete;
 						const currentScrollTop = originalScrollTopDescriptor.get.call(this);
@@ -10729,13 +10766,13 @@
 
 						// 初回ロード完了後100ms以降、最下部へのスクロールをブロック
 						if (timeSinceLoad > 100 && isGoingToBottom && !isAlreadyAtBottom) {
-							return;  // スクロールをブロック
+							return; // スクロールをブロック
 						}
 					}
 					// 通常のスクロールを実行
 					return originalScrollTopDescriptor.set.call(this, value);
 				},
-				configurable: true
+				configurable: true,
 			});
 		};
 
@@ -10755,8 +10792,9 @@
 
 				if (Math.abs(currentScrollTop - lastScrollTop) > 10) {
 					const caller = new Error().stack.split('\n')[2]?.trim() || 'unknown';
-					const timeSinceLoad = state.firstLoadComplete ? Date.now() - state.firstLoadComplete : 'no-load';
-
+					const timeSinceLoad = state.firstLoadComplete
+						? Date.now() - state.firstLoadComplete
+						: 'no-load';
 
 					lastScrollTop = currentScrollTop;
 				}
@@ -10866,12 +10904,12 @@
 						$remainingMessage.remove();
 					}
 					$(document).trigger('thread_message_deleted_sync_complete', {
-							messageId: messageId,
-							parentMessageId: parentMessageId,
-							channelId: data.channel_id,
-							deletedBy: senderUserId,
-							timestamp: new Date().toISOString(),
-						});
+						messageId: messageId,
+						parentMessageId: parentMessageId,
+						channelId: data.channel_id,
+						deletedBy: senderUserId,
+						timestamp: new Date().toISOString(),
+					});
 				} else {
 					$(document).trigger('thread_message_deleted_sync_complete', {
 						messageId: messageId,
