@@ -2685,7 +2685,7 @@
 				} catch (error) {}
 			}
 
-			if (window.LMSChat.cache && page > 1) {
+			if (window.LMSChat.cache) {
 				const cachedData = window.LMSChat.cache.getMessagesCache(channelId, page);
 				if (cachedData) {
 					if (cachedData.messages) {

@@ -445,6 +445,9 @@ class LMS_Unified_LongPoll
             $response_time = microtime(true) - $start_time;
             $this->update_stats($response_time, count($events));
             
+            // レスポンス送信
+            // 注: Long Pollingレスポンスの圧縮は、サーバー側のHTTP gzip圧縮を使用することを推奨
+            // WordPressは自動的にgzip圧縮を有効にするため、ここでは追加の圧縮は不要
             wp_send_json_success([
                 'events' => $events,
                 'timestamp' => time(),

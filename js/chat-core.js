@@ -60,11 +60,19 @@
 			getThreadMessagesCache: function (messageId, page) {
 				const key = `${messageId}_${page}`;
 				const cached = this.threadMessages.get(key);
+				if (cached && cached.compressed && window.LMSChat.utils.decompressData) {
+					return window.LMSChat.utils.decompressData(cached.data);
+				}
 				return cached;
 			},
 			setThreadMessagesCache: function (messageId, page, data) {
 				const key = `${messageId}_${page}`;
-				this.threadMessages.set(key, data);
+				if (window.LMSChat.utils.compressData) {
+					const compressed = window.LMSChat.utils.compressData(data);
+					this.threadMessages.set(key, { compressed: true, data: compressed, timestamp: Date.now() });
+				} else {
+					this.threadMessages.set(key, data);
+				}
 			},
 			clearThreadMessagesCache: function (messageId) {
 				// 指定されたスレッドの全ページキャッシュをクリア
