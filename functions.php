@@ -2330,6 +2330,15 @@ function lms_enqueue_chat_assets()
 			true
 		);
 
+		// ファイルアップロード管理
+		wp_enqueue_script(
+			'lms-file-upload-manager',
+			get_template_directory_uri() . '/js/file-upload-manager.js',
+			array('jquery', 'lms-chat'),
+			lms_get_asset_version('/js/file-upload-manager.js'),
+			true
+		);
+
 		// 統合ロングポーリングシステム（スレッドメッセージ同期に必要）
 		wp_enqueue_script(
 			'lms-unified-longpoll',
