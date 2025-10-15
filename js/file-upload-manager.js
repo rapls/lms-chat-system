@@ -31,78 +31,140 @@
 		 * ファイルをアップロード
 		 */
 		uploadFile: function(file, $previewContainer) {
-			const formData = new FormData();
-			formData.append('action', 'lms_upload_file');
-			formData.append('file', file);
-			formData.append('nonce', window.lmsChat?.nonce || '');
+			// ローディングインジケーターを作成
+			const $loadingIndicator = $('<div>', {
+				class: 'file-upload-loading'
+			}).html(`
+				<div class="loading-spinner"></div>
+				<span class="loading-text">アップロード中...</span>
+			`);
 
-			return $.ajax({
-				url: window.lmsChat?.ajaxUrl || '/wp-admin/admin-ajax.php',
-				type: 'POST',
-				data: formData,
-				processData: false,
-				contentType: false,
-				timeout: 30000
-			}).then((response) => {
-				if (response.success && response.data) {
-					// プレビュー追加
-					this.addFilePreview(
-						$previewContainer,
-						response.data.id,
-						response.data.name,
-						response.data.url
-					);
-					return response.data;
-				} else {
-					throw new Error(response.data || 'ファイルのアップロードに失敗しました');
-				}
+			// ローディングを表示
+			$previewContainer.append($loadingIndicator);
+
+		const formData = new FormData();
+		formData.append('action', 'lms_upload_file');
+		formData.append('file', file);
+		formData.append('nonce', window.lmsChat?.nonce || '');
+
+		return $.ajax({
+			url: window.lmsChat?.ajaxUrl || '/wp-admin/admin-ajax.php',
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			timeout: 30000
+	}).then((response) => {
+		if (response.success && response.data) {
+			const self = this;
+			// ローディングを完全に削除してからプレビューを表示
+			$loadingIndicator.fadeOut(200, function() {
+				$(this).remove();
+
+				// プレビューを追加（最初は非表示）
+				const $preview = self.addFilePreview($previewContainer, response.data);
+
+				// プレビューをフェードインで表示
+				$preview.hide().fadeIn(300);
 			});
-		},
+			return response.data;
+		} else {
+			// エラー時はローディングを削除
+			$loadingIndicator.fadeOut(200, function() {
+				$(this).remove();
+			});
+
+			// エラーメッセージを適切に取得
+			const errorMessage = typeof response.data === 'string' 
+				? response.data 
+				: (response.message || 'ファイルのアップロードに失敗しました');
+			throw new Error(errorMessage);
+		}
+	}).catch((error) => {
+		// ローディングを削除
+		$loadingIndicator.fadeOut(200, function() {
+			$(this).remove();
+		});
+
+		// Ajax エラーの場合
+		if (error.responseJSON && error.responseJSON.data) {
+			throw new Error(error.responseJSON.data);
+		} else if (error.statusText && error.statusText !== 'error') {
+			throw new Error('通信エラー: ' + error.statusText);
+		} else if (error.message) {
+			throw error; // 既にエラーオブジェクトの場合はそのまま
+		} else {
+			throw new Error('ファイルのアップロードに失敗しました');
+		}
+	});
+	},
 
 		/**
 		 * ファイルを削除（サーバーとプレビューの両方）
 		 */
-		deleteFile: function(fileId) {
-			const fileData = this.uploadedFiles.get(fileId);
-			if (!fileData) {
-				return Promise.resolve();
-			}
+	deleteFile: function(fileId) {
+		const fileData = this.uploadedFiles.get(fileId);
+		if (!fileData) {
+			return Promise.resolve();
+		}
 
-			// サーバーからファイル削除
-			return $.ajax({
-				url: window.lmsChat?.ajaxUrl || '/wp-admin/admin-ajax.php',
-				type: 'POST',
-				data: {
-					action: 'lms_delete_file',
-					file_id: fileId,
-					nonce: window.lmsChat?.nonce
-				},
-				timeout: 5000
-			}).then(() => {
-				// プレビューから削除
-				if (fileData.container) {
+		// 削除中のローディングインジケーターを作成
+		const $deleteLoading = $('<div>', {
+			class: 'file-delete-loading'
+		}).html(`
+			<div class="loading-spinner"></div>
+			<span class="loading-text">削除中...</span>
+		`);
+
+		// プレビューアイテムにローディングを追加
+		if (fileData.container) {
+			fileData.container.css('position', 'relative').append($deleteLoading);
+		}
+
+		// サーバーからファイル削除
+		return $.ajax({
+			url: window.lmsChat?.ajaxUrl || '/wp-admin/admin-ajax.php',
+			type: 'POST',
+			data: {
+				action: 'lms_delete_file',
+				file_id: fileId,
+				nonce: window.lmsChat?.nonce
+			},
+			timeout: 5000
+		}).then(() => {
+			// ローディングを完全に削除してからプレビューを削除
+			if (fileData.container) {
+				$deleteLoading.fadeOut(200, function() {
+					$(this).remove();
+					// プレビュー全体をフェードアウトして削除
 					fileData.container.fadeOut(300, function() {
 						$(this).remove();
 					});
-				}
-				// 管理リストから削除
-				this.uploadedFiles.delete(fileId);
+				});
+			}
+			// 管理リストから削除
+			this.uploadedFiles.delete(fileId);
 
-				// state.pendingFilesからも削除
-				if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
-					window.LMSChat.state.pendingFiles.delete(fileId);
-				}
-			}).catch((error) => {
-				console.error('File delete error:', error);
-				// エラーでも管理リストからは削除
-				this.uploadedFiles.delete(fileId);
-
-				// state.pendingFilesからも削除
-				if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
-					window.LMSChat.state.pendingFiles.delete(fileId);
-				}
+			// state.pendingFilesからも削除
+			if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+				window.LMSChat.state.pendingFiles.delete(fileId);
+			}
+		}).catch((error) => {
+			// エラー時はローディングを削除
+			$deleteLoading.fadeOut(200, function() {
+				$(this).remove();
 			});
-		},
+
+			console.error('File delete error:', error);
+			// エラーでも管理リストからは削除
+			this.uploadedFiles.delete(fileId);
+
+			// state.pendingFilesからも削除
+			if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+				window.LMSChat.state.pendingFiles.delete(fileId);
+			}
+		});
+	},
 
 		/**
 		 * 未送信のファイルをすべて削除
@@ -118,44 +180,72 @@
 		/**
 		 * プレビューコンテナにファイルを追加（×ボタン付き）
 		 */
-		addFilePreview: function($previewContainer, fileId, fileName, fileUrl) {
-			const $preview = $('<div>', {
-				class: 'file-preview-item',
-				'data-file-id': fileId
+		addFilePreview: function($previewContainer, fileData) {
+		const fileId = fileData.id;
+		const fileName = fileData.name;
+		const fileUrl = fileData.url;
+		const fileType = fileData.type || '';
+		const thumbnail = fileData.thumbnail;
+		const icon = fileData.icon;
+
+		const $preview = $('<div>', {
+			class: 'file-preview-item',
+			'data-file-id': fileId
+		});
+
+		// ファイルのプレビュー/アイコン表示
+		const $fileVisual = $('<div>', {
+			class: 'file-preview-visual'
+		});
+
+		if (thumbnail && fileType.startsWith('image/')) {
+			// 画像の場合はサムネイル表示
+			const $thumbnail = $('<img>', {
+				src: thumbnail,
+				alt: fileName,
+				class: 'file-preview-thumbnail'
 			});
-
-			const $fileName = $('<span>', {
-				class: 'file-preview-name',
-				text: fileName
+			$fileVisual.append($thumbnail);
+		} else if (icon) {
+			// その他のファイルはアイコン表示
+			const $icon = $('<img>', {
+				src: icon,
+				alt: fileName,
+				class: 'file-preview-icon'
 			});
+			$fileVisual.append($icon);
+		}
 
-			const $removeBtn = $('<button>', {
-				type: 'button',
-				class: 'file-preview-remove',
-				html: '&times;',
-				title: 'ファイルを削除'
-			});
+		const $fileName = $('<span>', {
+			class: 'file-preview-name',
+			text: fileName,
+			title: fileName // ツールチップ表示
+		});
 
-			// 削除ボタンのクリックイベント
-			$removeBtn.on('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
+		const $removeBtn = $('<button>', {
+			type: 'button',
+			class: 'file-preview-remove',
+			html: '&times;',
+			title: 'ファイルを削除'
+		});
 
-				if (confirm('このファイルを削除しますか？')) {
-					this.deleteFile(fileId);
-				}
-			});
+		// 削除ボタンのクリックイベント
+		$removeBtn.on('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
 
-			$preview.append($fileName, $removeBtn);
-			$previewContainer.append($preview);
+			if (confirm('このファイルを削除しますか？')) {
+				this.deleteFile(fileId);
+			}
+		});
 
-			// ファイルを登録
-			this.registerFile(fileId, {
-				name: fileName,
-				url: fileUrl
-			}, $preview);
+		$preview.append($fileVisual, $fileName, $removeBtn);
+		$previewContainer.append($preview);
 
-			return $preview;
+		// ファイルを登録
+		this.registerFile(fileId, fileData, $preview);
+
+		return $preview;
 		}
 	};
 
@@ -181,6 +271,13 @@
 		// ファイル添付ボタンのクリックイベント
 		$(document).on('click', '.attach-file-button', function(e) {
 			e.preventDefault();
+			
+			// チャンネル未選択チェック
+			if (!window.LMSChat || !window.LMSChat.state || !window.LMSChat.state.currentChannel) {
+				alert('チャンネルを選択してください');
+				return;
+			}
+			
 			$('#file-upload').click();
 		});
 
@@ -198,12 +295,68 @@
 			Array.from(files).forEach(file => {
 				window.LMSFileManager.uploadFile(file, $previewContainer)
 					.catch(error => {
-						alert('ファイルのアップロードに失敗しました: ' + error.message);
+						const errorMsg = error && error.message 
+							? error.message 
+							: 'ファイルのアップロードに失敗しました';
+						alert('ファイルのアップロードに失敗しました:\n' + errorMsg);
 					});
 			});
 
 			// input要素をクリア（同じファイルを再選択可能にする）
 			$(this).val('');
+		});
+
+		// ドラッグ&ドロップ機能
+		const $dropZones = $('.chat-input-container, .thread-input-container');
+		
+		$dropZones.on('dragover', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			// form要素にdrag-overクラスを付与
+			$(this).find('form').addClass('drag-over');
+		});
+
+		$dropZones.on('dragleave', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			// form要素からdrag-overクラスを削除
+			$(this).find('form').removeClass('drag-over');
+		});
+
+		$dropZones.on('drop', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			// form要素からdrag-overクラスを削除
+			$(this).find('form').removeClass('drag-over');
+
+			// チャンネル未選択チェック
+			if (!window.LMSChat || !window.LMSChat.state || !window.LMSChat.state.currentChannel) {
+				alert('チャンネルを選択してください');
+				return;
+			}
+
+			const files = e.originalEvent.dataTransfer.files;
+			if (!files || files.length === 0) {
+				return;
+			}
+
+			// プレビューコンテナを取得
+			const $previewContainer = $(this).find('.file-preview').first();
+			if ($previewContainer.length === 0) {
+				alert('プレビューエリアが見つかりません');
+				return;
+			}
+
+			// 各ファイルをアップロード
+			Array.from(files).forEach(file => {
+				window.LMSFileManager.uploadFile(file, $previewContainer)
+					.catch(error => {
+						const errorMsg = error && error.message 
+							? error.message 
+							: 'ファイルのアップロードに失敗しました';
+						alert('ファイルのアップロードに失敗しました:\n' + errorMsg);
+					});
+			});
 		});
 	});
 

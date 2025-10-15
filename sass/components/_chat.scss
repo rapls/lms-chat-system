@@ -950,6 +950,85 @@
 						}
 					}
 				}
+
+				// ファイルアップロード中のローディングインジケーター
+				.file-upload-loading {
+					display: inline-flex;
+					align-items: center;
+					gap: 10px;
+					padding: 12px 16px;
+					background: rgba(255, 255, 255, 0.98);
+					border: 1.5px solid #e2e8f0;
+					border-radius: 16px;
+					margin-bottom: 8px;
+					margin-right: 8px;
+					box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+					animation: fadeIn 0.3s ease-out;
+
+					.loading-spinner {
+						width: 20px;
+						height: 20px;
+						border: 2.5px solid #e2e8f0;
+						border-top-color: #94a3b8;
+						border-radius: 50%;
+						animation: spin 0.8s linear infinite;
+					}
+
+					.loading-text {
+						font-size: 0.875rem;
+						color: #64748b;
+						font-weight: 500;
+					}
+
+					@keyframes spin {
+						to {
+							transform: rotate(360deg);
+						}
+					}
+
+					@keyframes fadeIn {
+						from {
+							opacity: 0;
+							transform: translateY(-10px);
+						}
+						to {
+							opacity: 1;
+							transform: translateY(0);
+						}
+					}
+				}
+
+				// ファイル削除中のローディングインジケーター
+				.file-delete-loading {
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					gap: 8px;
+					background: rgba(255, 255, 255, 0.95);
+					border-radius: 16px;
+					z-index: 10;
+					animation: fadeIn 0.2s ease-out;
+
+					.loading-spinner {
+						width: 18px;
+						height: 18px;
+						border: 2.5px solid #fee2e2;
+						border-top-color: #ef4444;
+						border-radius: 50%;
+						animation: spin 0.8s linear infinite;
+					}
+
+					.loading-text {
+						font-size: 0.8rem;
+						color: #dc2626;
+						font-weight: 500;
+					}
+				}
 			}
 		}
 	}
