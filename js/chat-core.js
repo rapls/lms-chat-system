@@ -132,37 +132,46 @@
 			},
 			clearOldCache: function () {
 				const now = Date.now();
+				const cache = this;
 				
 				// 期限切れのメインメッセージキャッシュを削除（5分以上経過）
-				Object.keys(this.messagesCache || {}).forEach(key => {
-					const cached = this.messagesCache[key];
-					if (cached && cached.timestamp && now - cached.timestamp > 5 * 60 * 1000) {
-						delete this.messagesCache[key];
-					}
-				});
+				if (cache.messagesCache) {
+					Object.keys(cache.messagesCache).forEach(key => {
+						const cached = cache.messagesCache[key];
+						if (cached && cached.timestamp && now - cached.timestamp > 5 * 60 * 1000) {
+							delete cache.messagesCache[key];
+						}
+					});
+				}
 				
 				// 期限切れのスレッドメッセージキャッシュを削除（30分以上経過）
-				for (let [key, cached] of this.threadMessages.entries()) {
-					if (cached && cached.timestamp && now - cached.timestamp > 30 * 60 * 1000) {
-						this.threadMessages.delete(key);
+				if (cache.threadMessages && cache.threadMessages.entries) {
+					for (let [key, cached] of cache.threadMessages.entries()) {
+						if (cached && cached.timestamp && now - cached.timestamp > 30 * 60 * 1000) {
+							cache.threadMessages.delete(key);
+						}
 					}
 				}
 				
 				// 期限切れのリアクションキャッシュを削除（15分以上経過）
-				for (let [key, cached] of this.reactions.entries()) {
-					if (cached && cached.timestamp && now - cached.timestamp > 15 * 60 * 1000) {
-						this.reactions.delete(key);
+				if (cache.reactions && cache.reactions.entries) {
+					for (let [key, cached] of cache.reactions.entries()) {
+						if (cached && cached.timestamp && now - cached.timestamp > 15 * 60 * 1000) {
+							cache.reactions.delete(key);
+						}
 					}
 				}
 				
 				// 期限切れのスレッドリアクションキャッシュを削除（15分以上経過）
-				for (let [key, cached] of this.threadReactions.entries()) {
-					if (cached && cached.timestamp && now - cached.timestamp > 15 * 60 * 1000) {
-						this.threadReactions.delete(key);
+				if (cache.threadReactions && cache.threadReactions.entries) {
+					for (let [key, cached] of cache.threadReactions.entries()) {
+						if (cached && cached.timestamp && now - cached.timestamp > 15 * 60 * 1000) {
+							cache.threadReactions.delete(key);
+						}
 					}
 				}
 				
-				this.lastCacheClear = now;
+				cache.lastCacheClear = now;
 			},
 			// 定期的な自動クリーンアップを開始（5分ごと）
 			startAutoCacheCleanup: function () {
