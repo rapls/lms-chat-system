@@ -1337,3 +1337,349 @@ if (window.LMSChat.state.pendingFiles) {
 
 最終更新: 2025-10-15
 作成者: Claude (ファイルアップロード機能実装版)
+
+## CSS/SCSSワークフロー（2025-10-15更新）
+
+### ファイル構造
+
+#### 正しいファイル構造
+
+```
+/wp-content/themes/lms/
+├── sass/                         # SCSSソースファイル（BEM記法）
+│   ├── style.scss                # メインエントリーポイント ★重要
+│   ├── abstracts/                # 変数、ミックスイン、関数
+│   │   ├── _variables.scss
+│   │   ├── _mixins.scss
+│   │   └── _functions.scss
+│   ├── base/                     # リセット、ベーススタイル
+│   │   ├── _reset.scss
+│   │   ├── _typography.scss
+│   │   └── _base.scss
+│   ├── components/               # UIコンポーネント
+│   │   ├── _buttons.scss
+│   │   ├── _chat.scss            # チャット関連スタイル ★重要
+│   │   ├── _modal.scss
+│   │   └── ...
+│   ├── layout/                   # レイアウト要素
+│   │   ├── _header.scss
+│   │   ├── _footer.scss
+│   │   └── ...
+│   ├── pages/                    # ページ固有スタイル
+│   │   ├── _home.scss
+│   │   ├── _login.scss
+│   │   └── ...
+│   └── admin/                    # 管理画面スタイル
+│       └── _admin.scss
+└── style.css                     # コンパイル済みCSS（198KB）★出力先
+```
+
+### コンパイルワークフロー
+
+#### 正しいコンパイル方法
+
+```bash
+# メインエントリーポイントから一括コンパイル
+sass sass/style.scss style.css --style=compressed
+
+# ウォッチモード（開発時）
+sass --watch sass/style.scss:style.css --style=compressed
+
+# 本番用（圧縮あり）
+sass sass/style.scss style.css --style=compressed --no-source-map
+```
+
+#### 重要なポイント
+
+1. **必ずstyle.scssをコンパイルする**
+   - `sass/style.scss` がすべてのSCSSファイルを `@use` でインポート
+   - 個別のコンポーネントファイル（例: `sass/components/_chat.scss`）は直接コンパイルしない
+   
+2. **出力先は必ずstyle.css**
+   - テーマのルートディレクトリ直下
+   - WordPressがこのファイルを自動認識
+   
+3. **個別コンパイルは禁止**
+   ```bash
+   # ❌ 間違い: 個別コンポーネントのコンパイル
+   sass sass/components/_chat.scss css/components/_chat.css
+   
+   # ✅ 正しい: メインファイルから一括コンパイル
+   sass sass/style.scss style.css
+   ```
+
+### スタイル編集の手順
+
+1. **コンポーネントSCSSを編集**
+   ```bash
+   # 例: チャット関連のスタイルを編集
+   vim sass/components/_chat.scss
+   ```
+
+2. **メインファイルをコンパイル**
+   ```bash
+   sass sass/style.scss style.css --style=compressed
+   ```
+
+3. **ブラウザで確認**
+   - ハードリロード（Ctrl+Shift+R / Cmd+Shift+R）推奨
+   - ブラウザキャッシュに注意
+
+### ファイルプレビューのコンパクトデザイン
+
+#### 実装仕様（sass/components/_chat.scss）
+
+```scss
+// ファイルプレビュー - コンパクトピルボタンスタイル
+.file-preview-item {
+    display: inline-flex;          // 横並び配置
+    align-items: center;
+    gap: 8px;                      // アイテム間隔
+    padding: 8px 12px;             // コンパクトなパディング
+    background: white;             // 白背景
+    border: 1.5px solid #cbd5e1;   // ライトグレーボーダー
+    border-radius: 20px;           // ピルボタン形状 ★重要
+    margin-bottom: 6px;
+    margin-right: 8px;
+    max-width: 280px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    
+    &:hover {
+        border-color: #94a3b8;     // ホバー時ボーダー
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px); // 浮き上がり効果
+    }
+    
+    .file-preview-visual {
+        width: 32px;               // コンパクトサイズ
+        height: 32px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    
+    .file-preview-icon {
+        width: 20px;               // 小さめアイコン
+        height: 20px;
+        object-fit: contain;
+    }
+    
+    .file-preview-name {
+        flex: 1;
+        font-size: 0.8rem;         // コンパクトフォント
+        color: #1e293b;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+    
+    .file-preview-remove {
+        flex-shrink: 0;
+        width: 18px;               // 小さめ削除ボタン
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        transition: all 0.2s ease;
+        
+        &:hover {
+            background: #dc2626;
+            transform: scale(1.1);  // 拡大効果
+        }
+    }
+}
+```
+
+#### デザインの特徴
+
+1. **ピルボタンスタイル**
+   - `border-radius: 20px` で丸みのある形状
+   - `display: inline-flex` で横並びレイアウト
+   - 白背景で視認性向上
+
+2. **コンパクトサイズ**
+   - アイコン: 32px × 32px（従来の48pxから削減）
+   - ファイル名: 0.8rem（従来の0.9remから削減）
+   - 削除ボタン: 18px × 18px（従来の24pxから削減）
+   - パディング: 8px 12px（従来の12px 16pxから削減）
+
+3. **視覚的フィードバック**
+   - ホバー時の浮き上がり効果（`translateY(-1px)`）
+   - ボーダー色変化
+   - シャドウの強調
+   - 削除ボタンの拡大効果
+
+### よくある間違いと修正方法
+
+#### 間違い1: 個別コンポーネントのコンパイル
+
+```bash
+# ❌ 間違い
+sass sass/components/_chat.scss css/components/_chat.css
+```
+
+**問題点:**
+- `@use` ディレクティブが使えない
+- 変数、ミックスインが読み込めない
+- WordPressが認識しない場所にCSSが生成される
+
+**修正方法:**
+```bash
+# ✅ 正しい
+sass sass/style.scss style.css --style=compressed
+```
+
+#### 間違い2: 間違ったディレクトリにCSSを配置
+
+```
+❌ css/components/_chat.css     # 個別コンパイルされたファイル
+❌ css/_chat.scss                # 間違った場所のSCSS
+```
+
+**修正方法:**
+```bash
+# 不要なファイルを削除
+rm -rf css/components/
+rm -f css/_chat.scss
+
+# 正しいコンパイル
+sass sass/style.scss style.css --style=compressed
+```
+
+#### 間違い3: バックアップファイルの残存
+
+```
+❌ sass/components/_chat.scss.bak
+❌ sass/components/backup/
+```
+
+**修正方法:**
+```bash
+# バックアップファイルを削除
+find sass/ -name "*.bak" -delete
+find sass/ -name "*.backup" -delete
+rm -rf sass/components/backup/
+```
+
+### トラブルシューティング
+
+#### スタイルが反映されない場合
+
+1. **コンパイルエラーの確認**
+   ```bash
+   sass sass/style.scss style.css --style=compressed
+   # エラーメッセージを確認
+   ```
+
+2. **ブラウザキャッシュのクリア**
+   - ハードリロード: Ctrl+Shift+R (Windows) / Cmd+Shift+R (Mac)
+   - またはブラウザのキャッシュを完全クリア
+
+3. **ファイルタイムスタンプの更新**
+   ```bash
+   touch style.css
+   # WordPressがファイル変更を検知
+   ```
+
+4. **出力ファイルの確認**
+   ```bash
+   ls -lh style.css
+   # ファイルサイズが0でないことを確認（目安: 198KB）
+   ```
+
+#### コンパイルエラーが出る場合
+
+1. **文法エラーの確認**
+   - 波括弧の対応を確認（`{` と `}` のペア）
+   - セミコロンの抜けを確認
+   - プロパティ名のスペルミスを確認
+
+2. **パスエラーの確認**
+   ```scss
+   // ✅ 正しい
+   @use 'abstracts/variables';
+   
+   // ❌ 間違い（先頭に/やアンダースコアは不要）
+   @use '/abstracts/_variables';
+   ```
+
+### 開発時のベストプラクティス
+
+1. **ウォッチモードの活用**
+   ```bash
+   # ファイル変更を監視して自動コンパイル
+   sass --watch sass/style.scss:style.css --style=compressed
+   ```
+
+2. **BEM記法の遵守**
+   ```scss
+   // Block
+   .file-preview-item { }
+   
+   // Element
+   .file-preview-item__visual { }  // または .file-preview-visual
+   .file-preview-item__name { }    // または .file-preview-name
+   
+   // Modifier
+   .file-preview-item--compact { }
+   ```
+
+3. **変数の活用**
+   ```scss
+   // abstracts/_variables.scss で定義
+   $border-radius-pill: 20px;
+   $color-border-light: #cbd5e1;
+   
+   // components/_chat.scss で使用
+   .file-preview-item {
+       border-radius: $border-radius-pill;
+       border-color: $color-border-light;
+   }
+   ```
+
+4. **ミックスインの活用**
+   ```scss
+   // abstracts/_mixins.scss で定義
+   @mixin hover-lift {
+       transition: all 0.2s ease;
+       &:hover {
+           transform: translateY(-1px);
+       }
+   }
+   
+   // components/_chat.scss で使用
+   .file-preview-item {
+       @include hover-lift;
+   }
+   ```
+
+### ファイル管理ルール
+
+#### 保持すべきファイル
+- `sass/**/*.scss` - すべてのSCSSソースファイル
+- `style.css` - コンパイル済みCSS
+- `style.css.map` - ソースマップ（開発時）
+
+#### 削除すべきファイル
+- `css/components/**/*.css` - 個別コンパイルされたCSS
+- `css/*.scss` - 間違った場所のSCSS
+- `sass/**/*.bak` - バックアップファイル
+- `sass/**/backup/` - バックアップディレクトリ
+
+---
+
+最終更新: 2025-10-15
+作成者: Claude (CSS/SCSSワークフロー追加版)
