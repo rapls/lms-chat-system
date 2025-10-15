@@ -60,6 +60,14 @@
 			getThreadMessagesCache: function (messageId, page) {
 				const key = `${messageId}_${page}`;
 				const cached = this.threadMessages.get(key);
+				if (!cached) return null;
+				
+				// キャッシュ有効期限チェック（30分）
+				if (cached.timestamp && Date.now() - cached.timestamp > 30 * 60 * 1000) {
+					this.threadMessages.delete(key);
+					return null;
+				}
+				
 				if (cached && cached.compressed && window.LMSChat.utils.decompressData) {
 					return window.LMSChat.utils.decompressData(cached.data);
 				}
@@ -90,29 +98,86 @@
 				}
 			},
 			getReactionsCache: function (messageId) {
-				return this.reactions.get(messageId);
+				const cached = this.reactions.get(messageId);
+				if (!cached) return null;
+				
+				// キャッシュ有効期限チェック（15分）
+				if (cached.timestamp && Date.now() - cached.timestamp > 15 * 60 * 1000) {
+					this.reactions.delete(messageId);
+					return null;
+				}
+				
+				return cached.data || cached;
 			},
 			setReactionsCache: function (messageId, data) {
-				this.reactions.set(messageId, data);
+				this.reactions.set(messageId, { data: data, timestamp: Date.now() });
 			},
 			getThreadReactionsCache: function (messageId) {
-				return this.threadReactions.get(messageId);
+				const cached = this.threadReactions.get(messageId);
+				if (!cached) return null;
+				
+				// キャッシュ有効期限チェック（15分）
+				if (cached.timestamp && Date.now() - cached.timestamp > 15 * 60 * 1000) {
+					this.threadReactions.delete(messageId);
+					return null;
+				}
+				
+				return cached.data || cached;
 			},
 			setThreadReactionsCache: function (messageId, data) {
-				this.threadReactions.set(messageId, data);
+				this.threadReactions.set(messageId, { data: data, timestamp: Date.now() });
 			},
 			setUnreadCountsCache: function (data) {
 				this.unreadCounts = data;
 			},
 			clearOldCache: function () {
 				const now = Date.now();
-				if (now - this.lastCacheClear > 3600000) {
-					this.messages.clear();
-					this.threadMessages.clear();
-					this.reactions.clear();
-					this.threadReactions.clear();
-					this.unreadCounts = null;
-					this.lastCacheClear = now;
+				
+				// 期限切れのメインメッセージキャッシュを削除（5分以上経過）
+				Object.keys(this.messagesCache || {}).forEach(key => {
+					const cached = this.messagesCache[key];
+					if (cached && cached.timestamp && now - cached.timestamp > 5 * 60 * 1000) {
+						delete this.messagesCache[key];
+					}
+				});
+				
+				// 期限切れのスレッドメッセージキャッシュを削除（30分以上経過）
+				for (let [key, cached] of this.threadMessages.entries()) {
+					if (cached && cached.timestamp && now - cached.timestamp > 30 * 60 * 1000) {
+						this.threadMessages.delete(key);
+					}
+				}
+				
+				// 期限切れのリアクションキャッシュを削除（15分以上経過）
+				for (let [key, cached] of this.reactions.entries()) {
+					if (cached && cached.timestamp && now - cached.timestamp > 15 * 60 * 1000) {
+						this.reactions.delete(key);
+					}
+				}
+				
+				// 期限切れのスレッドリアクションキャッシュを削除（15分以上経過）
+				for (let [key, cached] of this.threadReactions.entries()) {
+					if (cached && cached.timestamp && now - cached.timestamp > 15 * 60 * 1000) {
+						this.threadReactions.delete(key);
+					}
+				}
+				
+				this.lastCacheClear = now;
+			},
+			// 定期的な自動クリーンアップを開始（5分ごと）
+			startAutoCacheCleanup: function () {
+				if (this.cleanupInterval) {
+					clearInterval(this.cleanupInterval);
+				}
+				this.cleanupInterval = setInterval(() => {
+					this.clearOldCache();
+				}, 5 * 60 * 1000); // 5分ごと
+			},
+			// 自動クリーンアップを停止
+			stopAutoCacheCleanup: function () {
+				if (this.cleanupInterval) {
+					clearInterval(this.cleanupInterval);
+					this.cleanupInterval = null;
 				}
 			},
 		},
@@ -695,7 +760,11 @@
 		const finishInitialization = (success = false) => {
 			chatState.isLongPollInitializing = false;
 			if (success) {
-				} else {
+				// 自動キャッシュクリーンアップを開始
+				if (chatState.cache && chatState.cache.startAutoCacheCleanup) {
+					chatState.cache.startAutoCacheCleanup();
+				}
+			} else {
 			}
 		};
 		const startLongPollConnection = () => {
@@ -753,4 +822,11 @@
 			waitForChannel();
 		}, 500);
 	};
+	
+	// ページ離脱時にクリーンアップタイマーを停止
+	window.addEventListener('beforeunload', () => {
+		if (chatState && chatState.cache && chatState.cache.stopAutoCacheCleanup) {
+			chatState.cache.stopAutoCacheCleanup();
+		}
+	});
 })(jQuery);
