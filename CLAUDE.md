@@ -74,7 +74,8 @@ WordPress ベースの高度なリアルタイムチャットシステム。Long
 │   │   ├── keyboard-shortcuts-manager.js # キーボードショートカット
 │   │   ├── lms-new-message-marker.js # 新着メッセージマーカー
 │   │   ├── badge-diagnostic.js   # バッジ診断
-│   │   └── lms-chat-loader.js    # チャットローダー
+│   │   ├── lms-chat-loader.js    # チャットローダー
+│   │   └── file-upload-manager.js # ファイルアップロード管理
 │   ├── 管理画面
 │   │   └── admin.js              # 管理画面用スクリプト
 │   └── その他
@@ -425,6 +426,83 @@ window.LMSPushNotification = {
 - バックグラウンド通知
 - カスタマイズ可能な通知内容
 - クリック時の動作設定
+
+### 9. ファイルアップロード管理システム (file-upload-manager.js)
+
+#### ファイル管理オブジェクト構造
+```javascript
+window.LMSFileManager = {
+    uploadedFiles: new Map(),        // アップロード済みファイルの管理
+    registerFile(),                  // ファイル登録
+    uploadFile(),                    // ファイルアップロード
+    deleteFile(),                    // ファイル削除（サーバー＋プレビュー）
+    cleanupUnsentFiles(),            // 未送信ファイルの一括削除
+    addFilePreview(),                // プレビュー表示（×ボタン付き）
+}
+```
+
+**実装内容:**
+
+#### ファイルアップロードフロー
+1. ユーザーが📎ボタンをクリック
+2. ファイル選択ダイアログが表示
+3. ファイルを選択すると自動的にサーバーにアップロード
+4. アップロード成功時にプレビューが表示される（×ボタン付き）
+5. ×ボタンでサーバーとプレビューから削除可能
+6. メッセージ送信時にファイルが添付される
+7. ページ離脱時に未送信ファイルを自動削除
+
+#### state.pendingFilesとの統合
+```javascript
+// registerFile時に両方のMapを更新
+registerFile: function(fileId, fileData, $container) {
+    this.uploadedFiles.set(fileId, {...});
+    if (window.LMSChat.state.pendingFiles) {
+        window.LMSChat.state.pendingFiles.set(fileId, fileData);
+    }
+}
+
+// deleteFile時に両方のMapから削除
+deleteFile: function(fileId) {
+    // サーバー削除 + プレビュー削除
+    this.uploadedFiles.delete(fileId);
+    window.LMSChat.state.pendingFiles.delete(fileId);
+}
+```
+
+#### ページ離脱時の自動クリーンアップ
+```javascript
+$(window).on('beforeunload', function(e) {
+    if (window.LMSFileManager.uploadedFiles.size > 0) {
+        // Navigator.sendBeacon で確実に送信
+        fileIds.forEach(fileId => {
+            const data = new FormData();
+            data.append('action', 'lms_delete_file');
+            data.append('file_id', fileId);
+            data.append('nonce', window.lmsChat?.nonce);
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon(url, data);
+            } else {
+                // フォールバック: 同期Ajax
+                $.ajax({...async: false});
+            }
+        });
+    }
+});
+```
+
+**特徴:**
+- **完全なライフサイクル管理**: アップロード→プレビュー→削除→送信
+- **state.pendingFiles統合**: メッセージ送信時に自動的にファイルIDを含める
+- **自動クリーンアップ**: ページ離脱時に未送信ファイルを削除
+- **navigator.sendBeacon使用**: 確実なクリーンアップ実現
+- **UIイベントハンドラー**: .attach-file-buttonクリックで自動トリガー
+- **エラーハンドリング**: アップロード失敗時の適切な処理
+
+**Ajax エンドポイント:**
+- `lms_upload_file`: ファイルアップロード
+- `lms_delete_file`: ファイル削除
 
 ## PHPクラス詳細
 
@@ -1118,3 +1196,144 @@ if (defined('WP_DEBUG') && WP_DEBUG) {
 
 最終更新: 2025-10-10
 作成者: Claude (クリーンアップ版)
+
+## ファイルアップロード機能実装（2025-10-15実施）
+
+### 実装概要
+
+完全なファイルアップロード→プレビュー→削除→送信のライフサイクル管理を実装しました。
+
+### 実装されたファイル
+
+#### 1. **file-upload-manager.js** (新規作成)
+
+**主要機能:**
+
+- **LMSFileManager グローバルオブジェクト**
+  - `uploadedFiles: new Map()`: アップロード済みファイルの管理
+  - `registerFile()`: ファイル登録（uploadedFiles + state.pendingFilesに両方登録）
+  - `uploadFile()`: FormDataでサーバーにアップロード、成功時にプレビュー生成
+  - `deleteFile()`: サーバー削除 + プレビュー削除 + 両Mapから削除
+  - `cleanupUnsentFiles()`: 未送信ファイルの一括削除
+  - `addFilePreview()`: ×ボタン付きプレビューHTML生成
+
+- **UIイベントハンドラー**
+  - `.attach-file-button`クリック → `#file-upload`トリガー
+  - `#file-upload` changeイベント → 自動アップロード開始
+  - 複数ファイル同時アップロード対応
+
+- **メッセージ送信時の統合処理**
+  - `message:sent`イベントで uploadedFiles + pendingFiles をクリア
+  - `thread:message_sent`イベントでスレッド用ファイルをクリア
+  - プレビューコンテナを空にする
+
+- **ページ離脱時の自動クリーンアップ**
+  - `beforeunload`イベントで未送信ファイルを削除
+  - `navigator.sendBeacon`で確実な削除リクエスト送信
+  - フォールバック: 同期Ajax（古いブラウザ対応）
+  - `pagehide`イベントでも追加クリーンアップ
+
+#### 2. **functions.php** (修正)
+
+```php
+// ファイルアップロード管理スクリプトをenqueue
+wp_enqueue_script(
+    'lms-file-upload-manager',
+    get_template_directory_uri() . '/js/file-upload-manager.js',
+    array('jquery', 'lms-chat'),
+    lms_get_asset_version('/js/file-upload-manager.js'),
+    true
+);
+```
+
+### 既存システムとの統合
+
+#### state.pendingFilesとの完全統合
+
+```javascript
+// registerFile()で両方のMapを更新
+this.uploadedFiles.set(fileId, {...});
+if (window.LMSChat.state.pendingFiles) {
+    window.LMSChat.state.pendingFiles.set(fileId, fileData);
+}
+
+// deleteFile()で両方のMapから削除
+this.uploadedFiles.delete(fileId);
+if (window.LMSChat.state.pendingFiles) {
+    window.LMSChat.state.pendingFiles.delete(fileId);
+}
+```
+
+#### 既存のPHP APIを使用
+
+- **アップロード**: `lms_upload_file` (class-lms-chat-upload.php)
+- **削除**: `lms_delete_file` (class-lms-chat-upload.php)
+
+### 実装されたフロー
+
+```
+1. ユーザーが📎ボタンをクリック
+   ↓
+2. ファイル選択ダイアログが表示
+   ↓
+3. ファイルを選択
+   ↓
+4. 自動的にサーバーにアップロード (uploadFile())
+   ↓
+5. アップロード成功
+   ↓
+6. プレビューが表示される（×ボタン付き）
+   ↓
+7a. ×ボタンクリック → サーバーから削除 + プレビュー削除
+7b. メッセージ送信 → ファイルが添付されてメッセージ送信
+7c. ページ離脱/リロード → 未送信ファイルを自動削除
+```
+
+### 技術的特徴
+
+- **FormData使用**: マルチパートファイルアップロード
+- **navigator.sendBeacon**: ページ離脱時の確実な通信
+- **Promise-based**: 非同期処理の適切な管理
+- **エラーハンドリング**: アップロード失敗時のアラート表示
+- **jQuery fadeOut**: スムーズなプレビュー削除アニメーション
+- **イベント駆動**: `message:sent`, `thread:message_sent`イベントで自動クリア
+
+### 構文チェック結果
+
+- ✅ file-upload-manager.js: 構文エラーなし
+- ✅ functions.php: 構文エラーなし
+- ✅ class-lms-chat-upload.php: 構文エラーなし
+
+### Gitコミット履歴
+
+1. **コミット 2770d1f** (2025-10-15)
+   - ファイルプレビュー削除とページ離脱時クリーンアップ機能を追加
+   - LMSFileManager基本実装
+
+2. **コミット 724c088** (2025-10-15)
+   - ファイルアップロード完全実装 - UI処理とstate統合
+   - uploadFile()メソッド実装
+   - UIイベントハンドラー実装
+   - state.pendingFiles統合
+
+### 今後の改善提案
+
+#### 短期的
+1. **CSS追加**: `.file-preview-item`, `.file-preview-remove`のスタイリング
+2. **プログレス表示**: アップロード中のプログレスバー
+3. **ファイルサイズ制限**: クライアント側での事前チェック
+
+#### 中期的
+1. **ドラッグ&ドロップ対応**: ファイルをドロップしてアップロード
+2. **画像プレビュー**: サムネイル表示機能
+3. **複数ファイル管理UI**: ファイルリスト表示の改善
+
+#### 長期的
+1. **クラウドストレージ連携**: S3, Google Drive等への直接アップロード
+2. **画像編集機能**: トリミング、リサイズ等
+3. **ファイル共有機能**: ダウンロードリンクの生成
+
+---
+
+最終更新: 2025-10-15
+作成者: Claude (ファイルアップロード機能実装版)
