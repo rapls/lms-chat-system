@@ -163,7 +163,6 @@
 		};
 
 		
-
 			return new Promise((resolve, reject) => {
 				$.ajax({
 					url: lmsLongPollConfig?.ajaxUrl || '/wp-admin/admin-ajax.php',

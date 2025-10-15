@@ -797,72 +797,6 @@ function lms_scripts()
 	wp_enqueue_script('jquery-ui-datepicker');
 	wp_enqueue_style('wp-jquery-ui-dialog');
 
-	// wp_localize_script は lms_enqueue_chat_assets() 内で 'lms-chat' スクリプトのエンキュー直後に呼び出されます
-	// ここでの重複呼び出しを防ぐため、以下のコードはコメントアウトしました
-	/*
-	// セッション情報を取得してユーザー情報をJavaScriptに渡す
-	$current_user_id = 0;
-	$current_user_name = '';
-	$current_user_avatar = '';
-
-	if (isset($_SESSION['lms_user_id']) && $_SESSION['lms_user_id'] > 0) {
-		$current_user_id = $_SESSION['lms_user_id'];
-
-		global $wpdb;
-		$user = $wpdb->get_row($wpdb->prepare(
-			"SELECT display_name, avatar_url FROM {$wpdb->prefix}lms_users WHERE id = %d",
-			$current_user_id
-		));
-		if ($user) {
-			$current_user_name = $user->display_name;
-			$current_user_avatar = $user->avatar_url ?: get_template_directory_uri() . '/img/default-avatar.png';
-		}
-	}
-
-	if ($current_user_id > 0) {
-		wp_localize_script('lms-chat', 'lmsChat', array(
-			'ajaxUrl' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('lms_ajax_nonce'),
-			'currentUserId' => $current_user_id,
-			'currentUserName' => $current_user_name,
-			'currentUserAvatar' => $current_user_avatar,
-			'debug' => WP_DEBUG,
-			'pageType' => is_page('chat') ? 'chat' : get_post_type(),
-			'templateUrl' => get_template_directory_uri(),
-			'themeUrl' => get_template_directory_uri(),
-			'siteUrl' => site_url(),
-			'longPollEnabled' => true,
-			'longPollUrl' => get_template_directory_uri() . '/includes/longpoll-realtime.php',
-			'iconThreadPath' => get_template_directory_uri() . '/img/icon-thread.svg',
-		));
-
-		wp_localize_script('lms-chat', 'lms_ajax_obj', array(
-			'ajax_url' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('lms_ajax_nonce'),
-			'current_user' => $current_user_id,
-		));
-
-		wp_localize_script('lms-chat', 'lmsAjax', array(
-			'ajaxurl' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('lms_ajax_nonce'),
-			'user_id' => $current_user_id,
-			'wpDebug' => WP_DEBUG,
-		));
-	}
-	*/
-
-	// 軽量スレッド同期用のlocalize_scriptのみ保持（依存関係が異なるため）
-	if (isset($_SESSION['lms_user_id']) && $_SESSION['lms_user_id'] > 0) {
-		$current_user_id = $_SESSION['lms_user_id'];
-
-		wp_localize_script('lms-lightweight-thread-sync', 'lmsChat', array(
-			'ajaxUrl' => admin_url('admin-ajax.php'),
-			'nonce' => wp_create_nonce('lms_ajax_nonce'),
-			'currentUserId' => function_exists('lms_get_current_user_id') ? lms_get_current_user_id() : (isset($_SESSION['lms_user_id']) ? $_SESSION['lms_user_id'] : 0),
-			'debug' => WP_DEBUG
-		));
-	}
-
 	// 【負荷削減】基本ロングポーリング設定も再無効化
 	// wp_localize_script('lms-chat-longpoll-global', 'lms_ajax_obj', array(
 	//	'ajax_url' => admin_url('admin-ajax.php'),
@@ -899,18 +833,6 @@ function lms_scripts()
 		//	'debugMode' => WP_DEBUG,
 		//	'enabled' => true
 		// ));
-
-	// ロングポーリング統合ハブ（統合システムを無効化したため、コメントアウト）
-	// wp_enqueue_script(
-	//	'lms-longpoll-integration-hub',
-		//	get_template_directory_uri() . '/js/lms-longpoll-integration-hub.js',
-		//	array('jquery', 'lms-unified-longpoll'),
-		//	lms_get_asset_version('/js/lms-longpoll-integration-hub.js'),
-		//	true
-		// );
-
-	// ロングポーリングデバッグモニター（全ページで利用可能）（重複のため削除）
-	// この行は削除（685行目以降で新しく追加済み）
 
 	if (is_page('chat') && !is_page_template('page-chat.php')) {
 			wp_enqueue_script(
@@ -1027,7 +949,6 @@ function lms_scripts()
 	);
 
 
-
 	wp_enqueue_script(
 		'lms-thread-reactions',
 		get_template_directory_uri() . '/js/thread-reactions.js',
@@ -1083,24 +1004,6 @@ function lms_scripts()
 				lms_get_asset_version('/js/chat-search-scroll.js'),
 				true
 			);
-
-			// 重複バッジシステムを無効化（パフォーマンス改善）
-			// 必要最小限のバッジ機能のみ残す
-			// wp_enqueue_script(
-			//	'lms-unified-badge-manager',
-			//	get_template_directory_uri() . '/js/lms-unified-badge-manager.js',
-			//	array('jquery', 'lms-chat', 'lms-chat-messages'),
-			//	lms_get_asset_version('/js/lms-unified-badge-manager.js'),
-			//	true
-			// );
-
-			// wp_enqueue_script(
-			//	'lms-realtime-unread-system',
-			//	get_template_directory_uri() . '/js/lms-realtime-unread-system.js',
-			//	array('jquery', 'lms-chat', 'lms-chat-messages', 'lms-unified-badge-manager'),
-			//	lms_get_asset_version('/js/lms-realtime-unread-system.js'),
-			//	true
-			// );
 
 	}
 }
@@ -2478,26 +2381,6 @@ function lms_enqueue_chat_assets()
 			true
 		);
 
-		// chat-reactions-actionsを後に移動（lms-chat-threadsの後に読み込み）
-
-		// 独自リアクション同期システム（既存Long Poll使用のため無効化）
-		// wp_enqueue_script(
-		//	'lms-chat-reactions-sync',
-		//	get_template_directory_uri() . '/js/chat-reactions-sync.js',
-		//	array('jquery', 'lms-chat', 'lms-chat-reactions-core', 'lms-chat-reactions-ui'),
-		//	lms_get_asset_version('/js/chat-reactions-sync.js'),
-		//	true
-		// );
-
-		// 既存Long Pollingシステムを使用（重複削除）
-		// wp_enqueue_script(
-		//	'lms-unified-reaction-longpoll',
-		//	get_template_directory_uri() . '/js/lms-unified-reaction-longpoll.js',
-		//	array('jquery', 'lms-chat', 'lms-chat-reactions-sync'),
-		//	lms_get_asset_version('/js/lms-unified-reaction-longpoll.js'),
-		//	true
-		// );
-
 		wp_enqueue_script(
 			'lms-chat-reactions-cache',
 			get_template_directory_uri() . '/js/chat-reactions-cache.js',
@@ -3235,88 +3118,6 @@ composer show minishlink/web-push
 	</style>
 <?php
 }
-
-// 既存のPush通知デバッグメニューは CHAT管理 に統合されました
-// 		'Push通知デバッグ',
-// 		'Push通知デバッグ',
-// 		'manage_options',
-// 		'push-notification-debug',
-// 			$table_name = $wpdb->prefix . 'lms_users';
-//
-// 			$columns = $wpdb->get_col("SHOW COLUMNS FROM {$table_name}");
-// 			$has_push_subscription = in_array('push_subscription', $columns);
-// 			$has_subscription_updated = in_array('subscription_updated', $columns);
-// 		}
-// 	);
-// });
-// {
-//
-// 	$channels = $wpdb->get_results(
-// 		"SELECT id, name, type FROM {$wpdb->prefix}lms_chat_channels ORDER BY type DESC, name ASC"
-// 	);
-//
-// 	$channel_members = $wpdb->get_results(
-// 		"SELECT cm.user_id, cm.channel_id, c.name, c.type
-// 	);
-//
-// 	$muted_channels = $wpdb->get_results(
-// 		"SELECT user_id, channel_id FROM {$wpdb->prefix}lms_chat_muted_channels"
-// 	);
-//
-// 	$user_channels = [];
-// 	$user_muted = [];
-//
-// 			$user_channels[$member->user_id] = [];
-// 		}
-// 		$user_channels[$member->user_id][] = $member->channel_id;
-// 	}
-//
-// 			$user_muted[$muted->user_id] = [];
-// 		}
-// 		$user_muted[$muted->user_id][] = $muted->channel_id;
-// 	}
-//
-// 	$members = $wpdb->get_results(
-// 		"SELECT
-// 	);
-//
-// 	$updated_count = 0;
-// 		$existing_subscription = json_decode($member->push_subscription, true);
-//
-// 		$subscribed_channels = [];
-// 		$muted_channel_ids = isset($user_muted[$member->member_id]) ? $user_muted[$member->member_id] : [];
-//
-// 					$subscribed_channels[] = $channel_id;
-// 				}
-// 			}
-// 		}
-//
-// 		$subscription = $existing_subscription ?: [
-// 			'endpoint' => 'https://fcm.googleapis.com/fcm/send/' . $member->member_id,
-// 			'expirationTime' => null,
-// 			'keys' => [
-// 				'p256dh' => 'BJ7MISip9lMZyhTJQZAahVViTqonX4vWhyt7DSxQdOm_9dXbY9pDCaaUvBVz22GnvA7LO4uxqhpSu4y7X8Wdxmc',
-// 				'auth'   => 'TTcdgHL63-G7X8THhlcBsQ'
-// 			]
-// 		];
-//
-// 		$result = $wpdb->update(
-// 			$wpdb->prefix . 'lms_users',
-// 			[
-// 				'push_subscription' => json_encode($subscription),
-// 				'subscribed_channels' => json_encode($subscribed_channels),
-// 				'subscription_updated' => current_time('mysql')
-// 			],
-// 			['id' => $member->member_id],
-// 			['%s', '%s', '%s'],
-// 			['%d']
-// 		);
-//
-// 			$updated_count++;
-// 		}
-// 	}
-//
-// }
 
 /**
  * Push通知関連の機能を管理するための関数群
@@ -5957,7 +5758,6 @@ add_action('init', 'lms_implement_intelligent_cache', 1);
  * 構文エラーが原因でコメントアウト
  * 代わりに lms_prevent_auto_thumbsup_reaction() を使用
  */
-// add_action('wp_enqueue_scripts', 'lms_thread_reaction_display_fix', 1003); // 無効化
 
 /**
  * 【修正版】スレッドリアクションの👍自動表示防止

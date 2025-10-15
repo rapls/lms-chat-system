@@ -86,7 +86,6 @@
             }
 
 
-
             this.isActive = true;
 
             // 即座に1回実行
@@ -111,7 +110,6 @@
             if (!this.currentThreadId) {
                 return;
             }
-
 
 
             $.ajax({

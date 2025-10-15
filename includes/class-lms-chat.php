@@ -2875,7 +2875,6 @@ class LMS_Chat
 		global $wpdb;
 		
 
-		
 		if (!$wpdb || $wpdb->last_error) {
 			wp_send_json_error('データベース接続エラーが発生しました。');
 			return;

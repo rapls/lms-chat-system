@@ -468,7 +468,6 @@ $user_id = 0;
       }
       
       
-      
       $processed_messages = [];
       foreach ($messages as $message) {
         $user_info = $lms_chat->get_user_display_info($message['user_id']);
