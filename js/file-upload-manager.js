@@ -20,6 +20,43 @@
 				container: $container,
 				uploadedAt: Date.now()
 			});
+
+			// state.pendingFilesにも登録
+			if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+				window.LMSChat.state.pendingFiles.set(fileId, fileData);
+			}
+		},
+
+		/**
+		 * ファイルをアップロード
+		 */
+		uploadFile: function(file, $previewContainer) {
+			const formData = new FormData();
+			formData.append('action', 'lms_upload_file');
+			formData.append('file', file);
+			formData.append('nonce', window.lmsChat?.nonce || '');
+
+			return $.ajax({
+				url: window.lmsChat?.ajaxUrl || '/wp-admin/admin-ajax.php',
+				type: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				timeout: 30000
+			}).then((response) => {
+				if (response.success && response.data) {
+					// プレビュー追加
+					this.addFilePreview(
+						$previewContainer,
+						response.data.id,
+						response.data.name,
+						response.data.url
+					);
+					return response.data;
+				} else {
+					throw new Error(response.data || 'ファイルのアップロードに失敗しました');
+				}
+			});
 		},
 
 		/**
@@ -50,10 +87,20 @@
 				}
 				// 管理リストから削除
 				this.uploadedFiles.delete(fileId);
+
+				// state.pendingFilesからも削除
+				if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+					window.LMSChat.state.pendingFiles.delete(fileId);
+				}
 			}).catch((error) => {
 				console.error('File delete error:', error);
 				// エラーでも管理リストからは削除
 				this.uploadedFiles.delete(fileId);
+
+				// state.pendingFilesからも削除
+				if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+					window.LMSChat.state.pendingFiles.delete(fileId);
+				}
 			});
 		},
 
@@ -115,10 +162,49 @@
 	// メッセージ送信成功時にファイルリストをクリア
 	$(document).on('message:sent', function() {
 		window.LMSFileManager.uploadedFiles.clear();
+		if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+			window.LMSChat.state.pendingFiles.clear();
+		}
+		$('.file-preview').empty();
 	});
 
 	$(document).on('thread:message_sent', function() {
 		window.LMSFileManager.uploadedFiles.clear();
+		if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+			window.LMSChat.state.pendingFiles.clear();
+		}
+		$('.thread-input-container .file-preview').empty();
+	});
+
+	// UIイベントハンドラー
+	$(document).ready(function() {
+		// ファイル添付ボタンのクリックイベント
+		$(document).on('click', '.attach-file-button', function(e) {
+			e.preventDefault();
+			$('#file-upload').click();
+		});
+
+		// ファイル選択時の処理
+		$('#file-upload').on('change', function(e) {
+			const files = e.target.files;
+			if (!files || files.length === 0) {
+				return;
+			}
+
+			// プレビューコンテナを取得
+			const $previewContainer = $('.file-preview').first();
+
+			// 各ファイルをアップロード
+			Array.from(files).forEach(file => {
+				window.LMSFileManager.uploadFile(file, $previewContainer)
+					.catch(error => {
+						alert('ファイルのアップロードに失敗しました: ' + error.message);
+					});
+			});
+
+			// input要素をクリア（同じファイルを再選択可能にする）
+			$(this).val('');
+		});
 	});
 
 	// ページ離脱時に未送信ファイルを削除
