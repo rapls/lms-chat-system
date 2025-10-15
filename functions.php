@@ -1875,7 +1875,8 @@ function lms_adjust_sub_admin_menu()
 
 // 一時的なイベントクリーンアップページを追加
 function lms_add_cleanup_menu() {
-    add_management_page(
+    add_submenu_page(
+        'lms-settings',
         'LMS Chat イベントクリーンアップ',
         'LMS Events Cleanup',
         'manage_options',
