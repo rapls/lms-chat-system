@@ -445,10 +445,7 @@
          * デバッグ情報をコンソールに出力
          */
         debugLog() {
-            const info = this.getDebugInfo();
-            console.group('ThreadReactionStore Debug Info');
-            console.groupEnd();
-        }
+            const info = this.getDebugInfo();        }
     };
 
     // グローバルに公開

@@ -85,9 +85,7 @@
 				const fn = deferredQueue.shift();
 				try {
 					fn();
-				} catch (e) {
-					console.error('ChannelSwitchGuard: deferred function error', e);
-				}
+				} catch (e) {				}
 			}
 			if (lockCount === 0 && container) {
 				container.classList.remove('channel-switch-locked');

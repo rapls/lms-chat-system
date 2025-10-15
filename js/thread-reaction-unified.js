@@ -487,14 +487,7 @@
     };
 
     // 高度なデバッグ機能
-    window.threadReactionDiagnostics = function() {
-        console.group('Thread Reaction System Diagnostics');
-        
-        
-        
-        
-        console.groupEnd();
-        
+    window.threadReactionDiagnostics = function() {        
         return {
             systemAvailable: !!window.LMSChat?.threadReactionUnified,
             debugMode: ThreadReactionUnified.debug,

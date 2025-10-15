@@ -2327,13 +2327,10 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
       }
 
       // スレッドメッセージキャッシュをクリア（全ページ）
-      error_log('[THREAD DEBUG] ajax_send_thread_message - キャッシュクリア開始: parent_message_id=' . $parent_message_id . ', message_id=' . $result->id);
       for ($page = 1; $page <= 10; $page++) {
         $cache_key = "thread_messages_{$parent_message_id}_p{$page}";
         wp_cache_delete($cache_key, 'lms_thread_messages');
       }
-      error_log('[THREAD DEBUG] ajax_send_thread_message - キャッシュクリア完了');
-
       // 成功レスポンス
       wp_send_json_success([
         'message_id' => $result->id,

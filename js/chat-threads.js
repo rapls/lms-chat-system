@@ -3824,8 +3824,6 @@
 										window.LMSChat.state.threadInfoCache = new Map();
 									}
 									window.LMSChat.state.threadInfoCache.set(parentMessageId, threadData);
-									console.log('[THREAD-SEND] Cache saved for parent:', parentMessageId, 'Avatars:', avatarsArray.length, 'Total:', actualTotal);
-
 									if (window.LMSUnifiedSync && window.LMSUnifiedSync.lastThreadCounts) {
 										window.LMSUnifiedSync.lastThreadCounts[parentMessageId] = actualTotal;
 									}
@@ -5911,16 +5909,12 @@
 						if (response.data && response.data.parent_deleted) {
 							const parentId = response.data.parent_id || response.data.thread_parent_id;
 							
-							if (window.lmsDebugMode) {
-								console.log('[Thread Delete Debug - JS] 親メッセージ削除: parent_id=' + parentId);
-							}
+							if (window.lmsDebugMode) {							}
 							
 							if (parentId) {
 								const $parentMessage = $(`.chat-message[data-message-id="${parentId}"]`);
 								if ($parentMessage.length > 0) {
-									if (window.lmsDebugMode) {
-										console.log('[Thread Delete Debug - JS] メインチャットから親メッセージを削除');
-									}
+									if (window.lmsDebugMode) {									}
 									$parentMessage.fadeOut(300, function() {
 										$(this).remove();
 									});
