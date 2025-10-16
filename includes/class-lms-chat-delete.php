@@ -306,11 +306,32 @@ function handle_message_delete() {
         $deleted = true;
     }
     
+    // 削除されたメッセージの日付をグループ化
+    $deleted_dates_by_channel = array();
     if (!empty($deleted_ids)) {
         foreach ($deleted_ids as $del_id) {
             if (isset($message_info_for_sse[$del_id])) {
                 $info = $message_info_for_sse[$del_id];
-                
+
+                // メイン�ッセージの場合、日付とチャンネルIDを記録
+                if ($info['type'] === 'main') {
+                    $msg = $wpdb->get_row($wpdb->prepare(
+                        "SELECT created_at FROM {$wpdb->prefix}lms_chat_messages WHERE id = %d",
+                        $del_id
+                    ));
+                    if ($msg) {
+                        $msg_date = date('Y-m-d', strtotime($msg->created_at));
+                        $channel_id = $info['channel_id'];
+
+                        if (!isset($deleted_dates_by_channel[$channel_id])) {
+                            $deleted_dates_by_channel[$channel_id] = array();
+                        }
+                        if (!in_array($msg_date, $deleted_dates_by_channel[$channel_id])) {
+                            $deleted_dates_by_channel[$channel_id][] = $msg_date;
+                        }
+                    }
+                }
+
                 if ($info['type'] === 'main') {
                     do_action('lms_chat_message_deleted', $del_id, $info['channel_id'], null);
                 } elseif ($info['type'] === 'thread') {
@@ -319,30 +340,84 @@ function handle_message_delete() {
             }
         }
     }
+
+    // その日のメッセージがすべて削除されたかチェックし、セパレーター削除イベントを発行
+    $separator_deletion_events = array();
+    foreach ($deleted_dates_by_channel as $channel_id => $dates) {
+        foreach ($dates as $date) {
+            $remaining_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}lms_chat_messages
+                 WHERE channel_id = %d AND DATE(created_at) = %s
+                 AND (deleted_at IS NULL OR deleted_at = '0000-00-00 00:00:00')",
+                $channel_id, $date
+            ));
+
+            if ($remaining_count == 0) {
+                // その日のメッセージがすべて削除された
+                $separator_deletion_events[] = array(
+                    'channel_id' => $channel_id,
+                    'date' => $date
+                );
+
+                // Long Polling用のイベント記録
+                do_action('lms_chat_date_separator_deleted', $channel_id, $date);
+            }
+        }
+    }
     
     if (!empty($deleted_ids)) {
+        // 添付ファイルの実ファイルを削除
+        $upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
+        foreach ($deleted_ids as $del_id) {
+            $attachments = $wpdb->get_results($wpdb->prepare(
+                "SELECT file_path, thumbnail_path FROM {$wpdb->prefix}lms_chat_attachments
+                 WHERE message_id = %d AND (deleted_at IS NULL OR deleted_at = '0000-00-00 00:00:00')",
+                $del_id
+            ));
+
+            if (!empty($attachments)) {
+                foreach ($attachments as $attachment) {
+                    // メインファイルを削除
+                    if (!empty($attachment->file_path)) {
+                        $file_path = $upload_base_dir . '/' . $attachment->file_path;
+                        if (file_exists($file_path)) {
+                            @unlink($file_path);
+                        }
+                    }
+
+                    // サムネイルを削除
+                    if (!empty($attachment->thumbnail_path) && $attachment->thumbnail_path !== $attachment->file_path) {
+                        $thumb_path = $upload_base_dir . '/' . $attachment->thumbnail_path;
+                        if (file_exists($thumb_path)) {
+                            @unlink($thumb_path);
+                        }
+                    }
+                }
+            }
+        }
+
         $tables_to_clean = [
             'lms_chat_reactions',
-            'lms_chat_attachments', 
+            'lms_chat_attachments',
             'lms_message_read_status',
             'lms_thread_read_status'
         ];
-        
+
         foreach ($deleted_ids as $del_id) {
             foreach ($tables_to_clean as $table) {
                 $full_table_name = $wpdb->prefix . $table;
-                
+
                 $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$full_table_name'");
-                
+
                 if ($table_exists) {
                     if ($table === 'lms_thread_read_status') {
                         $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $full_table_name LIKE 'message_id'");
                         if ($column_exists) {
                             // ソフトデリート
-                            $wpdb->update($full_table_name, 
-                                array('deleted_at' => current_time('mysql')), 
-                                array('message_id' => $del_id), 
-                                array('%s'), 
+                            $wpdb->update($full_table_name,
+                                array('deleted_at' => current_time('mysql')),
+                                array('message_id' => $del_id),
+                                array('%s'),
                                 array('%d')
                             );
                         } else {
@@ -350,10 +425,10 @@ function handle_message_delete() {
                         }
                     } else {
                         // ソフトデリート
-                        $wpdb->update($full_table_name, 
-                            array('deleted_at' => current_time('mysql')), 
-                            array('message_id' => $del_id), 
-                            array('%s'), 
+                        $wpdb->update($full_table_name,
+                            array('deleted_at' => current_time('mysql')),
+                            array('message_id' => $del_id),
+                            array('%s'),
                             array('%d')
                         );
                     }

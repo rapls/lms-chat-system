@@ -58,6 +58,7 @@ class LMS_Unified_LongPoll
      */
     const EVENT_MESSAGE_CREATE      = 'message_create';
     const EVENT_MESSAGE_DELETE      = 'message_delete';
+    const EVENT_DATE_SEPARATOR_DELETE = 'date_separator_delete';
     const EVENT_REACTION_UPDATE     = 'reaction_update';
     const EVENT_THREAD_CREATE       = 'thread_create';
     const EVENT_THREAD_DELETE       = 'thread_delete';
@@ -142,6 +143,7 @@ class LMS_Unified_LongPoll
         // 新しいメッセージ作成イベントフック（実際のHook名に修正）
         add_action('lms_chat_message_created', array($this, 'on_message_created'), 10, 4);
         add_action('lms_chat_message_deleted', array($this, 'on_message_deleted'), 10, 2);
+        add_action('lms_chat_date_separator_deleted', array($this, 'on_date_separator_deleted'), 10, 2);
         add_action('lms_chat_thread_message_sent', array($this, 'on_thread_message_created'), 10, 4);
         add_action('lms_chat_thread_message_deleted', array($this, 'on_thread_message_deleted'), 10, 3);
 
@@ -959,6 +961,24 @@ class LMS_Unified_LongPoll
             'data' => [
                 'message_id' => $message_id,
                 'action' => 'deleted'
+            ]
+        ]);
+    }
+
+    /**
+     * 日付セパレーター削除イベントハンドラー
+     */
+    public function on_date_separator_deleted($channel_id, $date)
+    {
+        $this->add_event([
+            'event_type' => self::EVENT_DATE_SEPARATOR_DELETE,
+            'priority' => self::PRIORITY_CRITICAL,
+            'channel_id' => $channel_id,
+            'message_id' => null,
+            'user_id' => lms_get_current_user_id(),
+            'data' => [
+                'date' => $date,
+                'action' => 'date_separator_deleted'
             ]
         ]);
     }

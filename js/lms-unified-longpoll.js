@@ -53,6 +53,7 @@
 			// デフォルトのイベントハンドラー
 			this.on('message_create', this.handleMessageCreate.bind(this));
 			this.on('message_delete', this.handleMessageDelete.bind(this));
+			this.on('date_separator_delete', this.handleDateSeparatorDelete.bind(this));
 			this.on('thread_create', this.handleThreadCreate.bind(this));
 			this.on('thread_delete', this.handleThreadDelete.bind(this));
 			this.on('reaction_update', this.handleReactionUpdate.bind(this));
@@ -418,6 +419,39 @@
 				}
 			}, 1000);
 		}
+
+	/**
+	 * 日付セパレーター削除イベントハンドラー
+	 */
+	handleDateSeparatorDelete(event) {
+		try {
+			const date = event.data?.date;
+			if (!date) {
+				return;
+			}
+
+			// 日付セパレーターを削除
+			this.removeDateSeparator(date);
+
+			// 複数の日付フォーマットで試行
+			const dateObj = new Date(date);
+			const dateFormats = [
+				date, // 元の日付文字列
+				dateObj.toDateString(), // "Mon Jan 01 2024"形式
+				dateObj.toLocaleDateString('ja-JP'), // 日本語形式
+				`${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日`,
+				`${dateObj.getMonth() + 1}月${dateObj.getDate()}日`,
+			];
+
+			dateFormats.forEach((dateFormat, index) => {
+				setTimeout(() => {
+					this.removeDateSeparator(dateFormat);
+				}, index * 50); // 時間差で実行
+			});
+		} catch (error) {
+			// エラーハンドリング
+		}
+	}
 
 	/**
 	 * スレッドメッセージ作成イベントハンドラー
