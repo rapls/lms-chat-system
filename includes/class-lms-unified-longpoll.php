@@ -896,7 +896,24 @@ class LMS_Unified_LongPoll
                 $attachments = [];
                 if ($attachments_results) {
                     $base_url = site_url('wp-content/chat-files-uploads');
+                    $upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
                     foreach ($attachments_results as $attachment) {
+                        // ファイルの存在確認
+                        $file_path = $upload_base_dir . '/' . $attachment['file_path'];
+                        if (!file_exists($file_path)) {
+                            // ファイルが存在しない場合はスキップ
+                            continue;
+                        }
+
+                        // サムネイルの存在確認
+                        $thumbnail_url = null;
+                        if (!empty($attachment['thumbnail_path'])) {
+                            $thumb_path = $upload_base_dir . '/' . $attachment['thumbnail_path'];
+                            if (file_exists($thumb_path)) {
+                                $thumbnail_url = $base_url . '/' . $attachment['thumbnail_path'];
+                            }
+                        }
+
                         $attachments[] = [
                             'id' => $attachment['id'],
                             'name' => $attachment['file_name'],
@@ -907,7 +924,7 @@ class LMS_Unified_LongPoll
                             'mime_type' => $attachment['mime_type'],
                             'size' => $attachment['file_size'],
                             'file_size' => $attachment['file_size'],
-                            'thumbnail' => !empty($attachment['thumbnail_path']) ? $base_url . '/' . $attachment['thumbnail_path'] : null
+                            'thumbnail' => $thumbnail_url
                         ];
                     }
                 }
