@@ -628,6 +628,7 @@ $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : (isset($_POST['_wpnonce']) ?
     $lms_chat = LMS_Chat::get_instance();
     if ($lms_chat && method_exists($lms_chat, 'get_messages')) {
       $channel_id = isset($_GET['channel_id']) ? intval($_GET['channel_id']) : 0;
+      error_log('[ajax_get_messages] ===== CALLED ===== channel_id: ' . $channel_id);
       $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
       $include_thread_info = isset($_GET['include_thread_info']) ? intval($_GET['include_thread_info']) : 0;
       $include_deleted_threads = isset($_GET['include_deleted_threads']) ? intval($_GET['include_deleted_threads']) : 1; // デフォルトで削除されたスレッドも含める
@@ -643,6 +644,63 @@ $nonce = isset($_POST['nonce']) ? $_POST['nonce'] : (isset($_POST['_wpnonce']) ?
       if (is_wp_error($result)) {
         wp_send_json_error($result->get_error_message());
       } else {
+        // 🔥 デバッグ: ajax_get_messages呼び出し確認
+        error_log('[ajax_get_messages] channel_id: ' . $channel_id . ', page: ' . $page);
+        
+        // 🔥 添付ファイル情報を取得
+        if (isset($result['messages'])) {
+          global $wpdb;
+          $message_ids = [];
+          foreach ($result['messages'] as $group) {
+            foreach ($group['messages'] as $message) {
+              $message_ids[] = $message->id;
+            }
+          }
+          
+          if (!empty($message_ids)) {
+            error_log('[ajax_get_messages] message_ids: ' . print_r($message_ids, true));
+            
+            $attachments_results = $wpdb->get_results(
+              "SELECT message_id, id, file_name, file_path, file_size, mime_type, thumbnail_path, created_at
+               FROM {$wpdb->prefix}lms_chat_attachments
+               WHERE message_id IN (" . implode(',', array_map('intval', $message_ids)) . ")
+               ORDER BY created_at ASC"
+            );
+            
+            error_log('[ajax_get_messages] attachments_results count: ' . count($attachments_results));
+            if (!empty($attachments_results)) {
+              error_log('[ajax_get_messages] attachments_results: ' . print_r($attachments_results, true));
+            }
+            
+            $base_url = site_url('wp-content/chat-files-uploads');
+            $attachments_batch = [];
+            foreach ($attachments_results as $attachment) {
+              $formatted_attachment = [
+                'id' => $attachment->id,
+                'name' => $attachment->file_name,
+                'file_name' => $attachment->file_name,
+                'url' => $base_url . '/' . $attachment->file_path,
+                'file_path' => $attachment->file_path,
+                'type' => $attachment->mime_type,
+                'mime_type' => $attachment->mime_type,
+                'size' => $attachment->file_size,
+                'file_size' => $attachment->file_size,
+                'thumbnail' => !empty($attachment->thumbnail_path) ? $base_url . '/' . $attachment->thumbnail_path : null
+              ];
+              $attachments_batch[(int)$attachment->message_id][] = $formatted_attachment;
+            }
+            
+            // 各メッセージにattachmentsを設定
+            foreach ($result['messages'] as &$group) {
+              foreach ($group['messages'] as &$message) {
+                $message->attachments = $attachments_batch[$message->id] ?? [];
+              }
+              unset($message);
+            }
+            unset($group);
+          }
+        }
+        
         // スレッド情報を含める場合
         if ($include_thread_info && isset($result['messages'])) {
           $message_ids = [];
@@ -869,6 +927,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
     $user_id = $sessionData['lms_user_id'];
 
     $channel_id = isset($_GET['channel_id']) ? intval($_GET['channel_id']) : 0;
+    error_log('[ajax_get_first_messages] ===== CALLED ===== channel_id: ' . $channel_id);
     
     if ($channel_id <= 0) {
       wp_send_json_error('チャンネルIDが必要です');
@@ -883,7 +942,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
     try {
       global $wpdb;
       $messages_table = $wpdb->prefix . 'lms_chat_messages';
-      $users_table = $wpdb->users;
+      $users_table = $wpdb->prefix . 'lms_users'; // LMS独自ユーザーテーブル使用
       
       $per_page = 50;
       $force_first = isset($_GET['force_first']) ? true : false;
@@ -976,6 +1035,48 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
         }
         
         $message_ids = array_column($processed_messages, 'id');
+        
+        // 添付ファイルをバッチ取得
+        $attachments_batch = [];
+        if (!empty($message_ids)) {
+          error_log('[ajax_get_first_messages] message_ids: ' . print_r($message_ids, true));
+
+          $attachments_results = $wpdb->get_results(
+            "SELECT message_id, id, file_name, file_path, file_size, mime_type, thumbnail_path, created_at
+             FROM {$wpdb->prefix}lms_chat_attachments
+             WHERE message_id IN (" . implode(',', array_map('intval', $message_ids)) . ")
+             ORDER BY created_at ASC"
+          );
+
+          error_log('[ajax_get_first_messages] attachments_results count: ' . count($attachments_results));
+          if (!empty($attachments_results)) {
+            error_log('[ajax_get_first_messages] attachments_results: ' . print_r($attachments_results, true));
+          }
+          
+          $base_url = site_url('wp-content/chat-files-uploads');
+          foreach ($attachments_results as $attachment) {
+            $formatted_attachment = [
+              'id' => $attachment->id,
+              'name' => $attachment->file_name,
+              'file_name' => $attachment->file_name,
+              'url' => $base_url . '/' . $attachment->file_path,
+              'file_path' => $attachment->file_path,
+              'type' => $attachment->mime_type,
+              'mime_type' => $attachment->mime_type,
+              'size' => $attachment->file_size,
+              'file_size' => $attachment->file_size,
+              'thumbnail' => !empty($attachment->thumbnail_path) ? $base_url . '/' . $attachment->thumbnail_path : null
+            ];
+            $attachments_batch[(int)$attachment->message_id][] = $formatted_attachment;
+          }
+          
+          // 各メッセージにattachmentsを設定
+          foreach ($processed_messages as &$msg) {
+            $msg['attachments'] = $attachments_batch[$msg['id']] ?? [];
+          }
+          unset($msg);
+        }
+        
         $thread_info = [];
         if (!empty($message_ids)) {
           try {
@@ -1095,7 +1196,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
     try {
       global $wpdb;
       $messages_table = $wpdb->prefix . 'lms_chat_messages';
-      $users_table = $wpdb->users;
+      $users_table = $wpdb->prefix . 'lms_users'; // LMS独自ユーザーテーブル使用
       
       $start_date = $target_date . ' 00:00:00';
       $end_date = $target_date . ' 23:59:59';
@@ -1137,6 +1238,46 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
         ];
         
         $processed_messages[] = $processed_message;
+      }
+      
+      // 🔥 添付ファイル情報を取得
+      $message_ids = array_column($processed_messages, 'id');
+      if (!empty($message_ids)) {
+        error_log('[ajax_get_messages_by_date] ===== CALLED ===== channel_id: ' . $channel_id . ', date: ' . $target_date);
+        error_log('[ajax_get_messages_by_date] message_ids: ' . print_r($message_ids, true));
+        
+        $attachments_results = $wpdb->get_results(
+          "SELECT message_id, id, file_name, file_path, file_size, mime_type, thumbnail_path, created_at
+           FROM {$wpdb->prefix}lms_chat_attachments
+           WHERE message_id IN (" . implode(',', array_map('intval', $message_ids)) . ")
+           ORDER BY created_at ASC"
+        );
+        
+        error_log('[ajax_get_messages_by_date] attachments_results count: ' . count($attachments_results));
+        
+        $base_url = site_url('wp-content/chat-files-uploads');
+        $attachments_batch = [];
+        foreach ($attachments_results as $attachment) {
+          $formatted_attachment = [
+            'id' => $attachment->id,
+            'name' => $attachment->file_name,
+            'file_name' => $attachment->file_name,
+            'url' => $base_url . '/' . $attachment->file_path,
+            'file_path' => $attachment->file_path,
+            'type' => $attachment->mime_type,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->file_size,
+            'file_size' => $attachment->file_size,
+            'thumbnail' => !empty($attachment->thumbnail_path) ? $base_url . '/' . $attachment->thumbnail_path : null
+          ];
+          $attachments_batch[(int)$attachment->message_id][] = $formatted_attachment;
+        }
+        
+        // 各メッセージにattachmentsを設定
+        foreach ($processed_messages as &$msg) {
+          $msg['attachments'] = $attachments_batch[$msg['id']] ?? [];
+        }
+        unset($msg);
       }
       
       wp_send_json_success([
@@ -1189,7 +1330,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
     try {
       global $wpdb;
       $messages_table = $wpdb->prefix . 'lms_chat_messages';
-      $users_table = $wpdb->users;
+      $users_table = $wpdb->prefix . 'lms_users'; // LMS独自ユーザーテーブル使用
       
       $start_datetime = $start_date . ' 00:00:00';
       $end_datetime = $end_date . ' 23:59:59';
@@ -1360,6 +1501,46 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
         }
       }
       
+      // 🔥 添付ファイル情報を取得
+      $message_ids_for_attachments = array_column($processed_messages, 'id');
+      if (!empty($message_ids_for_attachments)) {
+        error_log('[ajax_get_messages_around] ===== CALLED ===== channel_id: ' . $channel_id . ', message_id: ' . $message_id);
+        error_log('[ajax_get_messages_around] message_ids: ' . print_r($message_ids_for_attachments, true));
+        
+        $attachments_results = $wpdb->get_results(
+          "SELECT message_id, id, file_name, file_path, file_size, mime_type, thumbnail_path, created_at
+           FROM {$wpdb->prefix}lms_chat_attachments
+           WHERE message_id IN (" . implode(',', array_map('intval', $message_ids_for_attachments)) . ")
+           ORDER BY created_at ASC"
+        );
+        
+        error_log('[ajax_get_messages_around] attachments_results count: ' . count($attachments_results));
+        
+        $base_url = site_url('wp-content/chat-files-uploads');
+        $attachments_batch = [];
+        foreach ($attachments_results as $attachment) {
+          $formatted_attachment = [
+            'id' => $attachment->id,
+            'name' => $attachment->file_name,
+            'file_name' => $attachment->file_name,
+            'url' => $base_url . '/' . $attachment->file_path,
+            'file_path' => $attachment->file_path,
+            'type' => $attachment->mime_type,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->file_size,
+            'file_size' => $attachment->file_size,
+            'thumbnail' => !empty($attachment->thumbnail_path) ? $base_url . '/' . $attachment->thumbnail_path : null
+          ];
+          $attachments_batch[(int)$attachment->message_id][] = $formatted_attachment;
+        }
+        
+        // 各メッセージにattachmentsを設定
+        foreach ($processed_messages as &$msg) {
+          $msg['attachments'] = $attachments_batch[$msg['id']] ?? [];
+        }
+        unset($msg);
+      }
+      
       $grouped_messages = [];
       foreach ($processed_messages as $message) {
         $date = date('Y-m-d', strtotime($message['created_at']));
@@ -1412,9 +1593,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
 
     $this->acquireSession();
 
-
     $sessionData = isset($_SESSION) ? $_SESSION : array();
-
 
     $this->releaseSession();
 
@@ -1425,6 +1604,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
 
     $channel_id = isset($_GET['channel_id']) ? intval($_GET['channel_id']) : 0;
     $user_id = $sessionData['lms_user_id'];
+    error_log('[ajax_get_oldest_messages] ===== CALLED ===== channel_id: ' . $channel_id);
     
     if ($channel_id <= 0) {
       wp_send_json_error('チャンネルIDが必要です');
@@ -1473,6 +1653,45 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
         } catch (Exception $e) {
           continue;
         }
+      }
+      
+      // 🔥 添付ファイル情報を取得
+      $message_ids_for_attachments = array_column($processed_messages, 'id');
+      if (!empty($message_ids_for_attachments)) {
+        error_log('[ajax_get_oldest_messages] message_ids: ' . print_r($message_ids_for_attachments, true));
+        
+        $attachments_results = $wpdb->get_results(
+          "SELECT message_id, id, file_name, file_path, file_size, mime_type, thumbnail_path, created_at
+           FROM {$wpdb->prefix}lms_chat_attachments
+           WHERE message_id IN (" . implode(',', array_map('intval', $message_ids_for_attachments)) . ")
+           ORDER BY created_at ASC"
+        );
+        
+        error_log('[ajax_get_oldest_messages] attachments_results count: ' . count($attachments_results));
+        
+        $base_url = site_url('wp-content/chat-files-uploads');
+        $attachments_batch = [];
+        foreach ($attachments_results as $attachment) {
+          $formatted_attachment = [
+            'id' => $attachment->id,
+            'name' => $attachment->file_name,
+            'file_name' => $attachment->file_name,
+            'url' => $base_url . '/' . $attachment->file_path,
+            'file_path' => $attachment->file_path,
+            'type' => $attachment->mime_type,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->file_size,
+            'file_size' => $attachment->file_size,
+            'thumbnail' => !empty($attachment->thumbnail_path) ? $base_url . '/' . $attachment->thumbnail_path : null
+          ];
+          $attachments_batch[(int)$attachment->message_id][] = $formatted_attachment;
+        }
+        
+        // 各メッセージにattachmentsを設定
+        foreach ($processed_messages as &$msg) {
+          $msg['attachments'] = $attachments_batch[$msg['id']] ?? [];
+        }
+        unset($msg);
       }
       
       $grouped_messages = [];
@@ -3852,6 +4071,43 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
       $user_id = isset($sessionData['lms_user_id']) ? intval($sessionData['lms_user_id']) : 0;
       $thread_info_data = $lms_chat->get_thread_info_for_messages($message_ids, $channel_id, $user_id, false);
       
+      // 🔥 添付ファイル情報を一括取得
+      $attachments_by_message = [];
+      if (!empty($message_ids)) {
+        error_log('[ajax_get_messages_universal] ===== CALLED ===== channel_id: ' . $channel_id);
+        error_log('[ajax_get_messages_universal] message_ids: ' . print_r($message_ids, true));
+        
+        $attachments_results = $wpdb->get_results(
+          "SELECT message_id, id, file_name, file_path, file_size, mime_type, thumbnail_path, created_at
+           FROM {$wpdb->prefix}lms_chat_attachments
+           WHERE message_id IN (" . implode(',', array_map('intval', $message_ids)) . ")
+           ORDER BY created_at ASC"
+        );
+        
+        error_log('[ajax_get_messages_universal] attachments_results count: ' . count($attachments_results));
+        
+        $base_url = site_url('wp-content/chat-files-uploads');
+        foreach ($attachments_results as $attachment) {
+          $msg_id = intval($attachment->message_id);
+          if (!isset($attachments_by_message[$msg_id])) {
+            $attachments_by_message[$msg_id] = [];
+          }
+          
+          $attachments_by_message[$msg_id][] = [
+            'id' => $attachment->id,
+            'name' => $attachment->file_name,
+            'file_name' => $attachment->file_name,
+            'url' => $base_url . '/' . $attachment->file_path,
+            'file_path' => $attachment->file_path,
+            'type' => $attachment->mime_type,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->file_size,
+            'file_size' => $attachment->file_size,
+            'thumbnail' => !empty($attachment->thumbnail_path) ? $base_url . '/' . $attachment->thumbnail_path : null
+          ];
+        }
+      }
+      
       foreach ($messages as $message) {
         try {
           $message_id = intval($message['id']);
@@ -3874,7 +4130,7 @@ if (!isset($sessionData['lms_user_id']) || empty($sessionData['lms_user_id'])) {
             'parent_message_id' => $message['parent_message_id'] ?? null,
             'thread_parent_id' => $message['thread_parent_id'] ?? null,
             'channel_id' => $message['channel_id'],
-            'attachments' => [],
+            'attachments' => isset($attachments_by_message[$message_id]) ? $attachments_by_message[$message_id] : [],
             // リアクション情報を追加
             'reactions' => $reactions,
             // スレッド情報を追加

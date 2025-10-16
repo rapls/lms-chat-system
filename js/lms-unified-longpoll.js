@@ -94,6 +94,7 @@
 			return;
 		}
 
+
 		this.state.isActive = true;
 		this.state.connectionId = 'conn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 		this.startPolling();
@@ -223,6 +224,9 @@
 				return;
 			}
 
+			if (events.length > 0) {
+			}
+
 			// 重複イベント防止とフィルタリング
 			const newEvents = events.filter(event => {
 				const eventId = parseInt(event.id);
@@ -325,42 +329,55 @@
 		 * メッセージ作成イベントハンドラー
 		 */
 		handleMessageCreate(event) {
-			// Debug output removed
 
-			// チャンネル切り替え中は処理をスキップ
+			// チャンネル切り替え直後（500ms以内）のみスキップ
+			// 🔥 修正: 長時間スキップしないように、タイムスタンプベースのチェックに変更
 			if (window.LMSChat?.state?.isChannelSwitching) {
-				return;
+				// チャンネル切り替え開始時刻を記録
+				if (!this.state.channelSwitchStartTime) {
+					this.state.channelSwitchStartTime = Date.now();
+				}
+
+				// 500ms経過したらisChannelSwitchingを無視
+				const elapsed = Date.now() - this.state.channelSwitchStartTime;
+				if (elapsed < 500) {
+					return;
+				} else {
+					// isChannelSwitchingをリセット
+					if (window.LMSChat?.state) {
+						window.LMSChat.state.isChannelSwitching = false;
+					}
+					this.state.channelSwitchStartTime = null;
+				}
+			} else {
+				// チャンネル切り替え中でない場合はタイムスタンプをリセット
+				this.state.channelSwitchStartTime = null;
 			}
 
-			// チャンネル未選択時は処理しない
-			const currentChannelName = $('#current-channel-name .channel-header-text').text();
-			if (!currentChannelName || currentChannelName === 'チャンネルを選択してください') {
-				// Debug output removed
+			// チャンネルIDベースでチェック（より信頼性が高い）
+			const currentChannelId = window.LMSChat?.state?.currentChannel;
+			if (!currentChannelId || currentChannelId === 0) {
 				return;
 			}
 
 			// 現在のチャンネルと異なるメッセージは処理しない
-			const currentChannelId = window.LMSChat?.state?.currentChannel;
 			if (currentChannelId && event.channel_id && parseInt(event.channel_id) !== parseInt(currentChannelId)) {
-				// Debug output removed
 				return;
 			}
 
 			// 既存のappendMessage関数を使用（最優先）
 			if (window.LMSChat && window.LMSChat.messages && window.LMSChat.messages.appendMessage) {
-				// Debug output removed
-				
+
 				// イベントデータからメッセージデータを構築
 				const messageData = this.buildMessageDataFromEvent(event);
 				if (messageData) {
 					window.LMSChat.messages.appendMessage(messageData, { fromLongPoll: true });
-					// Debug output removed
 					return;
+				} else {
 				}
 			}
 
 			// フォールバック: より簡潔なメッセージ表示を試行
-			// Debug output removed
 			this.constructAndDisplayMessage(event);
 		}
 
@@ -606,28 +623,29 @@
 				const messageId = event.message_id || event.data?.message_id;
 				const channelId = event.channel_id;     // 🔥 修正: 直接取得（フェーズ1修正により復旧）
 				const userId = event.user_id;           // 🔥 修正: 直接取得（フェーズ1修正により復旧）
-				
-				// Debug output removed
+
 
 				// イベントデータに完全な詳細情報が含まれているかチェック
 				// 🔥 修正: より柔軟な判定条件に変更
-				if (event.data && typeof event.data === 'object' && 
-					channelId && userId && 
+				if (event.data && typeof event.data === 'object' &&
+					channelId && userId &&
 					(event.data.user_name || event.data.display_name) &&    // ユーザー名のいずれかがあればOK
 					(event.data.message || event.data.content)) {           // メッセージのいずれかがあればOK
-					
+
+
 					// 詳細データが完全に含まれている場合はそのまま使用
 					const messageData = {
 						id: messageId,
 						message_id: messageId,
 						channel_id: channelId,
 						user_id: userId,
-						user_name: event.data.user_name,
-						display_name: event.data.user_name,      // 🔥 追加: appendMessage用
+						user_name: event.data.user_name || event.data.display_name,
+						display_name: event.data.user_name || event.data.display_name,      // 🔥 追加: appendMessage用
 						message: event.data.message || event.data.content,
 						content: event.data.message || event.data.content,  // 🔥 追加: 互換性
 						created_at: event.data.created_at || new Date().toISOString(),
 						timestamp: event.data.timestamp || event.data.created_at || new Date().toISOString(),
+						attachments: event.data.attachments || [],  // 🔥 添付ファイル追加
 						// appendMessage関数が期待する追加フィールド
 						is_current_user: userId && userId == (window.lmsChat?.currentUserId || $('#chat-messages').data('current-user-id')),
 						read_status: null,
@@ -635,16 +653,13 @@
 						is_deleted: 0         // 🔥 追加: 削除状態確認用
 					};
 
-					// Debug output removed
 					return messageData;
 				}
 
 				// データが不完全な場合はnullを返して、Ajaxで詳細取得するフォールバックに任せる
-				// Debug output removed
 				return null;
 
 			} catch (error) {
-				// Debug output removed
 				return null;
 			}
 		}
@@ -942,7 +957,16 @@
 		 */
 		checkAndRemoveDateSeparator(targetDate) {
 			try {
-				// Debug output removed
+				// 🛡️ チャンネル切り替え中はセパレーター削除をスキップ
+				if (window.LMSChat?.state?.isChannelSwitching) {
+					return;
+				}
+				
+				// 🛡️ メッセージグループが存在し、メッセージがある場合はスキップ
+				const $targetGroup = $(`.message-group[data-date-key="${targetDate}"]`);
+				if ($targetGroup.length > 0 && $targetGroup.find('.chat-message').length > 0) {
+					return;
+				}
 
 				// その日付のメッセージが他にあるかチェック（削除済み除外）
 				const messagesOnDate = this.getMessagesForDate(targetDate);
@@ -1024,6 +1048,26 @@
 		 */
 		removeDateSeparator(targetDate) {
 			try {
+				// 🛡️ チャンネル切り替え中はセパレーター削除をスキップ
+				if (window.LMSChat?.state?.isChannelSwitching) {
+					return;
+				}
+
+				// 🛡️ displayMessages実行中はセパレーター削除をスキップ
+				if (window.LMSChat?.state?.isDisplayingMessages) {
+					return;
+				}
+
+				// 🛡️ メッセージグループが存在し、可視メッセージがある場合はスキップ
+				const $targetGroup = $(`.message-group[data-date-key="${targetDate}"]`);
+				if ($targetGroup.length > 0) {
+					const visibleMessages = $targetGroup.find('.chat-message:visible:not(.message-deleted):not([data-deleted="true"])');
+					if (visibleMessages.length > 0) {
+						// 可視メッセージがあるので削除しない
+						return;
+					}
+				}
+				
 				// 🔥 修正: より包括的な日付セパレーターのセレクターを試行
 				const dateSelectors = [
 					'.date-separator',
@@ -1059,9 +1103,19 @@
 							visible: separatorElement.is(':visible'),
 							element: separatorElement[0]
 						});
-						
+
 						// 日付セパレーターのテキストに対象日付が含まれているかチェック
 						if (self.isDateMatch(separatorText, targetDate)) {
+							// 🛡️ 最終チェック: このセパレーターの親グループに可視メッセージがあるかチェック
+							const $parentGroup = separatorElement.closest('.message-group');
+							if ($parentGroup.length > 0) {
+								const visibleMessages = $parentGroup.find('.chat-message:visible:not(.message-deleted):not([data-deleted="true"])');
+								if (visibleMessages.length > 0) {
+									// 親グループに可視メッセージがあるので削除しない
+									return; // continue
+								}
+							}
+
 							// Debug output removed
 							separatorElement.fadeOut(300, function() {
 								$(this).remove();

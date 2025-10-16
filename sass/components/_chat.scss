@@ -880,7 +880,7 @@
 					padding: 8px 12px;
 					background: white;
 					border: 1.5px solid #cbd5e1;
-					border-radius: 16px;  // 角丸ボーダー
+					border-radius: 16px; // 角丸ボーダー
 					margin-bottom: 8px;
 					margin-right: 8px;
 					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -2273,33 +2273,49 @@
 	}
 }
 
+// メッセージ内の添付ファイル - コンパクトピルボタンスタイル
 .attachment-item {
-	margin-top: 10px;
-	max-width: 150px;
-	position: relative;
-	padding: 10px;
-	border: solid 1px #000;
-	border-radius: 20px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;                   // 8px → 10px（少し広く）
+	padding: 10px 14px;          // 8px 12px → 10px 14px（少し大きく）
+	background: white;
+	border: 1.5px solid #cbd5e1;
+	border-radius: 22px;         // 20px → 22px（少し丸く）
+	margin: 6px 8px 6px 0;
+	max-width: 300px;            // 280px → 300px（少し広く）
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease;
+
+	&:hover {
+		border-color: #94a3b8;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		transform: translateY(-1px);
+	}
 
 	.attachment-preview {
+		width: 40px;             // 32px → 40px（少し大きく）
+		height: 40px;            // 32px → 40px（少し大きく）
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #f1f5f9;
+		border-radius: 8px;      // 6px → 8px（少し丸く）
 		position: relative;
-		display: block;
-		width: 100%;
 
-		img,
-		.file-icon {
+		img {
 			width: 100%;
-			height: auto;
-			object-fit: contain;
-			border-radius: 4px;
+			height: 100%;
+			object-fit: cover;
+			border-radius: 8px;  // 6px → 8px（少し丸く）
 			display: block;
 		}
 
 		.file-icon {
-			width: 90px;
-			padding: 20px;
-			box-sizing: border-box;
-			margin: 0 auto;
+			width: 24px;         // 20px → 24px（少し大きく）
+			height: 24px;        // 20px → 24px（少し大きく）
+			object-fit: contain;
 		}
 	}
 
@@ -2312,21 +2328,22 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(0, 0, 0, 0.5);
-		border-radius: 4px;
+		background: rgba(0, 0, 0, 0.6);
+		border-radius: 8px;      // 6px → 8px
 		opacity: 0;
 		transition: opacity 0.2s ease;
 		cursor: pointer;
 		text-decoration: none;
 
 		img {
-			width: 24px;
-			height: 24px;
+			width: 18px;         // 16px → 18px（少し大きく）
+			height: 18px;        // 16px → 18px（少し大きく）
 			filter: brightness(0) invert(1);
 		}
 
 		&:hover {
-			background: rgba(0, 0, 0, 0.7);
+			background: rgba(0, 0, 0, 0.75);
+			opacity: 1 !important;
 		}
 	}
 
@@ -2335,20 +2352,27 @@
 	}
 
 	.attachment-info {
-		margin-top: 8px;
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
 
+		.attachment-name,
 		.file-name {
-			font-size: 0.875rem;
-			color: #1a1f36;
-			margin-bottom: 4px;
+			font-size: 0.8rem;
+			color: #1e293b;
+			font-weight: 500;
+			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
-			white-space: nowrap;
+			max-width: 180px;
 		}
 
+		.attachment-size,
 		.file-size {
-			font-size: 0.75rem;
-			color: #666;
+			font-size: 0.7rem;
+			color: #64748b;
 		}
 	}
 }

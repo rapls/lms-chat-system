@@ -1,0 +1,19 @@
+// =============================================================================
+// Channel Switch Lock Component
+// =============================================================================
+// チャンネル切り替え中のスクロールちらつき防止
+// トランジション、アニメーション、スムーズスクロールを一時的に無効化
+
+// チャンネル切り替え中のCSS無効化
+#chat-messages.channel-switch-locked,
+#chat-messages.channel-switch-locked * {
+    transition: none !important;
+    animation: none !important;
+    -webkit-transition: none !important;
+    -webkit-animation: none !important;
+}
+
+// スムーズスクロールも無効化
+#chat-messages.channel-switch-locked {
+    scroll-behavior: auto !important;
+}

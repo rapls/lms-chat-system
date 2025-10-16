@@ -21,10 +21,21 @@
 				uploadedAt: Date.now()
 			});
 
-			// state.pendingFilesにも登録
-			if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
-				window.LMSChat.state.pendingFiles.set(fileId, fileData);
+			// state.pendingFilesを確実に初期化して登録
+			if (!window.LMSChat) {
+				window.LMSChat = {};
 			}
+			if (!window.LMSChat.state) {
+				window.LMSChat.state = {};
+			}
+			if (!window.LMSChat.state.pendingFiles) {
+				window.LMSChat.state.pendingFiles = new Map();
+				console.log('[DEBUG] state.pendingFilesを初期化しました');
+			}
+			
+			window.LMSChat.state.pendingFiles.set(fileId, fileData);
+			console.log('[DEBUG] ファイルを登録:', fileId, fileData);
+			console.log('[DEBUG] 現在のpendingFiles:', Array.from(window.LMSChat.state.pendingFiles.entries()));
 		},
 
 		/**
@@ -251,6 +262,14 @@
 
 	// メッセージ送信成功時にファイルリストをクリア
 	$(document).on('message:sent', function() {
+		// 🔥 送信済みファイルIDをsessionStorageに記録（削除保護）
+		const sentFileIds = Array.from(window.LMSFileManager.uploadedFiles.keys());
+		if (sentFileIds.length > 0) {
+			const existingSentIds = JSON.parse(sessionStorage.getItem('lms_sent_file_ids') || '[]');
+			const mergedIds = [...new Set([...existingSentIds, ...sentFileIds])];
+			sessionStorage.setItem('lms_sent_file_ids', JSON.stringify(mergedIds));
+		}
+
 		window.LMSFileManager.uploadedFiles.clear();
 		if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
 			window.LMSChat.state.pendingFiles.clear();
@@ -259,6 +278,14 @@
 	});
 
 	$(document).on('thread:message_sent', function() {
+		// 🔥 送信済みファイルIDをsessionStorageに記録（削除保護）
+		const sentFileIds = Array.from(window.LMSFileManager.uploadedFiles.keys());
+		if (sentFileIds.length > 0) {
+			const existingSentIds = JSON.parse(sessionStorage.getItem('lms_sent_file_ids') || '[]');
+			const mergedIds = [...new Set([...existingSentIds, ...sentFileIds])];
+			sessionStorage.setItem('lms_sent_file_ids', JSON.stringify(mergedIds));
+		}
+
 		window.LMSFileManager.uploadedFiles.clear();
 		if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
 			window.LMSChat.state.pendingFiles.clear();
@@ -360,17 +387,36 @@
 		});
 	});
 
-	// ページ離脱時に未送信ファイルを削除
+	// ページ離脱時に未送信ファイルのみを削除
 	let isUnloading = false;
 	$(window).on('beforeunload', function(e) {
 		if (window.LMSFileManager.uploadedFiles.size > 0 && !isUnloading) {
 			isUnloading = true;
 
+			// 🔥 送信済みファイルIDを取得（削除しないファイル）
+			const sentFileIds = JSON.parse(sessionStorage.getItem('lms_sent_file_ids') || '[]');
+
 			// 同期的にファイル削除（beforeunloadでは非同期処理が完了しない可能性があるため）
 			const fileIds = Array.from(window.LMSFileManager.uploadedFiles.keys());
 
+			console.log('[LMSFileManager] beforeunload - uploadedFiles:', fileIds);
+			console.log('[LMSFileManager] beforeunload - sentFileIds:', sentFileIds);
+
+			// 🔥 送信済みファイルを除外して未送信ファイルのみ削除
+			const unsentFileIds = fileIds.filter(fileId => !sentFileIds.includes(fileId));
+
+			console.log('[LMSFileManager] beforeunload - unsentFileIds:', unsentFileIds);
+
+			if (unsentFileIds.length === 0) {
+				// 未送信ファイルがない場合は何もしない
+				console.log('[LMSFileManager] beforeunload - 未送信ファイルなし、削除スキップ');
+				return;
+			}
+
+			console.log('[LMSFileManager] beforeunload - 未送信ファイルを削除:', unsentFileIds);
+
 			// Navigator.sendBeacon を使用して確実に送信
-			fileIds.forEach(fileId => {
+			unsentFileIds.forEach(fileId => {
 				const data = new FormData();
 				data.append('action', 'lms_delete_file');
 				data.append('file_id', fileId);
@@ -395,14 +441,29 @@
 				}
 			});
 
-			window.LMSFileManager.uploadedFiles.clear();
+			// 🔥 未送信ファイルのみクリア（送信済みファイルは保護）
+			unsentFileIds.forEach(fileId => {
+				window.LMSFileManager.uploadedFiles.delete(fileId);
+			});
 		}
 	});
 
-	// ページリロード時にもクリーンアップ
+	// ページリロード時にもクリーンアップ（未送信ファイルのみ）
 	$(window).on('pagehide', function() {
 		if (window.LMSFileManager.uploadedFiles.size > 0) {
-			window.LMSFileManager.cleanupUnsentFiles();
+			// 🔥 送信済みファイルIDを取得（削除しないファイル）
+			const sentFileIds = JSON.parse(sessionStorage.getItem('lms_sent_file_ids') || '[]');
+			const fileIds = Array.from(window.LMSFileManager.uploadedFiles.keys());
+
+			// 🔥 送信済みファイルを除外して未送信ファイルのみ削除
+			const unsentFileIds = fileIds.filter(fileId => !sentFileIds.includes(fileId));
+
+			if (unsentFileIds.length > 0) {
+				// 未送信ファイルのみ削除
+				unsentFileIds.forEach(fileId => {
+					window.LMSFileManager.deleteFile(fileId);
+				});
+			}
 		}
 	});
 

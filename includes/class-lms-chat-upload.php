@@ -25,8 +25,8 @@ class LMS_Chat_Upload
 
 	private function __construct()
 	{
-		$wp_upload_dir = wp_upload_dir();
-		$this->upload_dir = $wp_upload_dir['basedir'] . '/chat-files';
+		// wp-contentディレクトリ直下にアップロード
+		$this->upload_dir = ABSPATH . 'wp-content/chat-files-uploads';
 
 		if (!file_exists($this->upload_dir)) {
 			wp_mkdir_p($this->upload_dir);
@@ -128,7 +128,7 @@ class LMS_Chat_Upload
 	 */
 	public function handle_file_upload()
 	{
-		check_ajax_referer('lms_chat_nonce', 'nonce');
+		check_ajax_referer('lms_ajax_nonce', 'nonce');
 
 		if (!isset($_FILES['file'])) {
 			wp_send_json_error('ファイルが送信されていません。');
@@ -136,6 +136,11 @@ class LMS_Chat_Upload
 		}
 
 		$file = $_FILES['file'];
+		
+		// セッションの開始を確認
+		if (session_status() === PHP_SESSION_NONE) {
+			session_start();
+		}
 		$user_id = isset($_SESSION['lms_user_id']) ? (int)$_SESSION['lms_user_id'] : 0;
 
 		if (!$this->validate_file($file)) {
@@ -219,11 +224,10 @@ class LMS_Chat_Upload
 		);
 
 		$file_id = $wpdb->insert_id;
-		$wp_upload_dir = wp_upload_dir();
 
 		$thumbnail_url = null;
 		if ($thumbnail_path) {
-			$thumbnail_url = $wp_upload_dir['baseurl'] . '/chat-files/' . $thumbnail_path;
+			$thumbnail_url = site_url('wp-content/chat-files-uploads/' . $thumbnail_path);
 		}
 
 		return array(
@@ -231,7 +235,7 @@ class LMS_Chat_Upload
 			'name' => $file['name'],
 			'size' => $file['size'],
 			'type' => $mime_type,
-			'url' => $wp_upload_dir['baseurl'] . '/chat-files/' . $relative_path,
+			'url' => site_url('wp-content/chat-files-uploads/' . $relative_path),
 			'thumbnail' => $thumbnail_url,
 			'icon' => $this->get_file_type_icon($mime_type, $ext)
 		);
@@ -347,7 +351,7 @@ class LMS_Chat_Upload
 	 */
 	public function handle_file_download()
 	{
-		check_ajax_referer('lms_chat_nonce', 'nonce');
+		check_ajax_referer('lms_ajax_nonce', 'nonce');
 
 		$file_id = isset($_GET['file_id']) ? (int)$_GET['file_id'] : 0;
 		if (!$file_id) {
@@ -384,9 +388,14 @@ class LMS_Chat_Upload
 	 */
 	public function handle_file_delete()
 	{
-		check_ajax_referer('lms_chat_nonce', 'nonce');
+		check_ajax_referer('lms_ajax_nonce', 'nonce');
 
 		$file_id = isset($_POST['file_id']) ? (int)$_POST['file_id'] : 0;
+		
+		// セッションの開始を確認
+		if (session_status() === PHP_SESSION_NONE) {
+			session_start();
+		}
 		$user_id = isset($_SESSION['lms_user_id']) ? (int)$_SESSION['lms_user_id'] : 0;
 
 		if (!$file_id || !$user_id) {
@@ -436,8 +445,7 @@ class LMS_Chat_Upload
 	 */
 	public function get_file_url($filename)
 	{
-		$wp_upload_dir = wp_upload_dir();
-		return $wp_upload_dir['baseurl'] . '/chat-files/' . $filename;
+		return site_url('wp-content/chat-files-uploads/' . $filename);
 	}
 
 	/**
@@ -457,7 +465,7 @@ class LMS_Chat_Upload
 	 */
 	public function handle_cleanup_orphaned_files()
 	{
-		check_ajax_referer('lms_chat_nonce', 'nonce');
+		check_ajax_referer('lms_ajax_nonce', 'nonce');
 
 		$user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
 		$file_ids = isset($_POST['file_ids']) ? json_decode(stripslashes($_POST['file_ids']), true) : [];

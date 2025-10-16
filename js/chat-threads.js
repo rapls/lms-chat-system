@@ -2031,6 +2031,7 @@
 				// 送信者側では即座にスレッド情報を更新（遅延削除）
 				refreshThreadInfo(parentMessageId);
 				$(document).trigger('message_sent', [messageData]);
+				$(document).trigger('thread:message_sent', [messageData]); // 🔥 ファイルマネージャー用
 				$(document).trigger('thread:reply:sent', [parentMessageId, messageData]);
 				if (
 					window.LMSThreadSync &&
@@ -3942,6 +3943,7 @@
 						) {
 							window.LMSChat.uploads.clearThreadUploads();
 						}
+						$(document).trigger('thread:message_sent', [response.data]); // 🔥 ファイルマネージャー用
 						$(document).trigger('thread:reply:sent', [parentMessageId, response.data]);
 						$(document).trigger('lms_chat_thread_message_sent', [response.data]);
 						const $threadMessages = $('.thread-messages');

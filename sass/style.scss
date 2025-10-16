@@ -29,6 +29,7 @@
 @use 'components/table';
 @use 'components/chat';
 @use 'components/emoji-picker';
+@use 'components/channel-switch-lock';
 
 /* 管理画面レイヤー */
 @use 'admin/admin';

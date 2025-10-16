@@ -788,9 +788,6 @@ function lms_scripts()
 {
 	wp_enqueue_style('lms-style', get_stylesheet_uri(), array(), lms_get_asset_version('style.css'));
 
-	// 🔥 SCROLL FLICKER FIX: チャンネル切り替え中のCSS無効化
-	wp_enqueue_style('lms-channel-switch-lock', get_template_directory_uri() . '/css/channel-switch-lock.css', array(), lms_get_asset_version('css/channel-switch-lock.css'));
-
 	wp_enqueue_script('jquery');
 
 	wp_enqueue_script('jquery-ui-core');
@@ -2533,7 +2530,9 @@ add_action('template_redirect', 'lms_redirect_if_not_logged_in');
 /**
  * ファイルアップロード関連の設定とセキュリティ強化
  */
-function lms_chat_upload_setup()
+// 廃止: この関数は class-lms-chat-upload.php のコンストラクタに統合されました
+// 新しいアップロード先: /wp-content/chat-files-uploads/
+function lms_chat_upload_setup_DEPRECATED()
 {
 	$upload_dir = wp_upload_dir();
 	$chat_files_dir = $upload_dir['basedir'] . '/chat-files';
@@ -2557,7 +2556,7 @@ function lms_chat_upload_setup()
 		file_put_contents($htaccess_file, $htaccess_content);
 	}
 }
-add_action('init', 'lms_chat_upload_setup');
+// add_action('init', 'lms_chat_upload_setup'); // 廃止
 
 /**
  * アップロードされたファイルの検証
@@ -2617,13 +2616,13 @@ function lms_cleanup_chat_files()
 	if ($old_files) {
 		$upload_dir = wp_upload_dir();
 		foreach ($old_files as $file) {
-			$file_path = $upload_dir['basedir'] . '/chat-files/' . $file->file_path;
+			$file_path = ABSPATH . 'wp-content/chat-files-uploads/' . $file->file_path;
 			if (file_exists($file_path)) {
 				unlink($file_path);
 			}
 
 			if ($file->thumbnail_path) {
-				$thumb_path = $upload_dir['basedir'] . '/chat-files/' . $file->thumbnail_path;
+				$thumb_path = ABSPATH . 'wp-content/chat-files-uploads/' . $file->thumbnail_path;
 				if (file_exists($thumb_path)) {
 					unlink($thumb_path);
 				}
@@ -2642,7 +2641,8 @@ add_action('wp_scheduled_delete', 'lms_cleanup_chat_files');
 /**
  * チャットファイルのアップロードディレクトリを作成
  */
-function lms_create_chat_upload_dir()
+// 廃止: この関数は class-lms-chat-upload.php のコンストラクタに統合されました
+function lms_create_chat_upload_dir_DEPRECATED()
 {
 	$upload_dir = wp_upload_dir();
 	$dirs = array(
@@ -2659,7 +2659,7 @@ function lms_create_chat_upload_dir()
 		}
 	}
 }
-add_action('admin_init', 'lms_create_chat_upload_dir');
+// add_action('admin_init', 'lms_create_chat_upload_dir'); // 廃止
 
 add_action('wp_ajax_lms_delete_message', array(LMS_Chat::get_instance(), 'handle_delete_message'));
 add_action('wp_ajax_nopriv_lms_delete_message', array(LMS_Chat::get_instance(), 'handle_delete_message')); // 追加
@@ -3814,10 +3814,13 @@ add_action('wp_ajax_lms_get_server_stats', 'lms_get_server_stats_handler');
 add_action('wp_ajax_nopriv_lms_get_server_stats', 'lms_get_server_stats_handler');
 
 /**
- * 統一されたユーザーID取得関数
- * LMSカスタム認証とWordPress認証の両方に対応
+ * LMSユーザーID取得関数
+ * ⚠️ 重要: WordPressユーザーとは完全に分離されています
  *
- * @return int ユーザーID（認証されていない場合は0）
+ * LMSユーザーのみを対象とし、WordPressユーザーは一切考慮しません。
+ * この関数は$_SESSION['lms_user_id']のみを参照します。
+ *
+ * @return int LMSユーザーID（ログインしていない場合は0）
  */
 function lms_get_current_user_id() {
     if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
@@ -3828,21 +3831,70 @@ function lms_get_current_user_id() {
         return intval($_SESSION['lms_user_id']);
     }
 
-    if (function_exists('get_current_user_id')) {
-        return get_current_user_id();
-    }
-
+    // ⚠️ 重要: WordPressユーザーにフォールバックしない
+    // LMSユーザーがいない場合は必ず0を返す
     return 0;
 }
 
 /**
- * 現在のユーザーが認証されているかチェック
+ * 現在のLMSユーザーが認証されているかチェック
+ * ⚠️ 重要: WordPressログインとは完全に分離されています
  *
- * @return bool 認証されている場合true
+ * @return bool LMSユーザーとしてログインしている場合true
  */
 function lms_is_user_logged_in() {
     $user_id = lms_get_current_user_id();
     return $user_id > 0;
+}
+
+/**
+ * LMSユーザーの権限チェック
+ * ⚠️ 重要: WordPressユーザー権限とは完全に分離されています
+ *
+ * LMSユーザーの権限のみをチェックします。
+ *
+ * @param string $capability 権限名（'manage_options', 'edit_messages', 'delete_messages'等）
+ * @return bool 権限を持っている場合true
+ */
+function lms_current_user_can($capability) {
+    global $wpdb;
+
+    $user_id = lms_get_current_user_id();
+    if (!$user_id) {
+        return false;
+    }
+
+    // LMSユーザー情報を取得
+    $user = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}lms_users WHERE id = %d",
+        $user_id
+    ));
+
+    if (!$user) {
+        return false;
+    }
+
+    // 管理者権限チェック（roleカラムが存在する場合）
+    if ($capability === 'manage_options') {
+        // roleカラムが存在する場合はroleで判定
+        if (isset($user->role) && $user->role === 'admin') {
+            return true;
+        }
+        // is_adminカラムが存在する場合はis_adminで判定
+        if (isset($user->is_admin) && $user->is_admin == 1) {
+            return true;
+        }
+        // デフォルトではuser_id 1のみが管理者
+        return $user_id === 1;
+    }
+
+    // その他の権限は今後実装
+    // 現在はすべてのログインユーザーに基本的な権限を付与
+    if (in_array($capability, ['edit_messages', 'delete_messages', 'add_reactions'])) {
+        return true;
+    }
+
+    return false;
 }
 // ==================================================
 // 未読バッジシステム用のAJAXエンドポイント

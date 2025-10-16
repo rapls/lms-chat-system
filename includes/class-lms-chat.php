@@ -167,8 +167,20 @@ class LMS_Chat
 		
 		if ($attachments) {
 			$upload_dir = wp_upload_dir();
+			$upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
 			foreach ($attachments as &$attachment) {
-				$attachment->url = $upload_dir['baseurl'] . '/chat-files/' . $attachment->file_path;
+				$attachment->url = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->file_path;
+
+				// サムネイルファイルの存在チェック
+				if (!empty($attachment->thumbnail_path)) {
+					$thumb_file = $upload_base_dir . '/' . $attachment->thumbnail_path;
+					if (!file_exists($thumb_file)) {
+						// サムネイルが存在しない場合はnullにする
+						$attachment->thumbnail_path = null;
+					} else {
+						$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
+					}
+				}
 			}
 		}
 		
@@ -474,10 +486,18 @@ class LMS_Chat
 				);
 				
 				$upload_dir = wp_upload_dir();
+				$upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
 				foreach ($attachments_results as $attachment) {
-					$attachment->url = $upload_dir['baseurl'] . '/chat-files/' . $attachment->file_path;
+					$attachment->url = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->file_path;
 					if ($attachment->thumbnail_path) {
-						$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files/' . $attachment->thumbnail_path;
+						// サムネイルファイルの存在チェック
+						$thumb_file = $upload_base_dir . '/' . $attachment->thumbnail_path;
+						if (file_exists($thumb_file)) {
+							$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
+						} else {
+							// サムネイルが存在しない場合はnullにする
+							$attachment->thumbnail_path = null;
+						}
 					}
 					$attachments_batch[(int)$attachment->message_id][] = $attachment;
 				}
@@ -920,7 +940,12 @@ class LMS_Chat
 		if (!empty($file_ids)) {
 			$this->attach_files_to_message($message_id, $file_ids);
 			$message_data['attachments'] = $this->get_cached_attachments($file_ids);
+			error_log('[send_message_optimized] file_ids: ' . print_r($file_ids, true));
+			error_log('[send_message_optimized] attachments: ' . print_r($message_data['attachments'], true));
 		}
+		
+		// デバッグ: message_dataの内容を確認
+		error_log('[send_message_optimized] 完成したmessage_data: ' . print_r($message_data, true));
 		
 		// 旧版Long Pollingシステム（後方互換性のため保持）
 		if (class_exists('LMS_Chat_LongPoll')) {
@@ -932,7 +957,7 @@ class LMS_Chat
 		if (class_exists('LMS_Unified_LongPoll')) {
 			$unified_longpoll = LMS_Unified_LongPoll::get_instance();
 			if ($unified_longpoll) {
-				$unified_longpoll->on_message_created($message_id, $channel_id, $user_id);
+				$unified_longpoll->on_message_created($message_id, $channel_id, $user_id, $message_data);
 			}
 		}
 		
@@ -952,22 +977,24 @@ class LMS_Chat
 
 	/**
 	 * キャッシュされたユーザー名を取得
+	 * LMS独自ユーザーテーブルのみを使用（WordPressユーザーとは完全分離）
 	 */
 	private function get_cached_user_name($user_id)
 	{
 		static $user_cache = array();
-		
+
 		if (isset($user_cache[$user_id])) {
 			return $user_cache[$user_id];
 		}
-		
+
 		global $wpdb;
+		// LMS独自ユーザーテーブルからのみ取得
 		$user_name = $wpdb->get_var($wpdb->prepare(
-			"SELECT display_name FROM {$wpdb->users} WHERE ID = %d",
+			"SELECT display_name FROM {$wpdb->prefix}lms_users WHERE id = %d",
 			$user_id
 		));
-		
-		$user_cache[$user_id] = $user_name ?: 'Unknown User';
+
+		$user_cache[$user_id] = $user_name ?: 'ユーザー' . $user_id;
 		return $user_cache[$user_id];
 	}
 
@@ -978,13 +1005,38 @@ class LMS_Chat
 	{
 		global $wpdb;
 		
+		if (empty($file_ids)) {
+			return array();
+		}
+		
 		$placeholders = implode(',', array_fill(0, count($file_ids), '%d'));
 		$attachments = $wpdb->get_results($wpdb->prepare(
-			"SELECT id, filename, url, file_type FROM {$wpdb->prefix}lms_chat_uploads WHERE id IN ($placeholders)",
+			"SELECT id, file_name, file_path, file_type, file_size, mime_type, thumbnail_path 
+			FROM {$wpdb->prefix}lms_chat_attachments 
+			WHERE id IN ($placeholders)",
 			$file_ids
 		), ARRAY_A);
 		
-		return $attachments;
+		// JavaScriptで期待される形式に変換
+		$formatted_attachments = array();
+		foreach ($attachments as $attachment) {
+			$base_url = site_url('wp-content/chat-files-uploads');
+			$formatted_attachments[] = array(
+				'id' => $attachment['id'],
+				'name' => $attachment['file_name'],
+				'file_name' => $attachment['file_name'],
+				'url' => $base_url . '/' . $attachment['file_path'],
+				'file_path' => $attachment['file_path'],
+				'type' => $attachment['mime_type'],
+				'mime_type' => $attachment['mime_type'],
+				'file_type' => $attachment['file_type'],
+				'size' => $attachment['file_size'],
+				'file_size' => $attachment['file_size'],
+				'thumbnail' => !empty($attachment['thumbnail_path']) ? $base_url . '/' . $attachment['thumbnail_path'] : null
+			);
+		}
+		
+		return $formatted_attachments;
 	}
 
 	/**
@@ -1546,7 +1598,7 @@ class LMS_Chat
 			$user_id = intval($_SESSION['lms_user_id']);
 		}
 		
-		if (!$user_id && is_user_logged_in()) {
+		if (!$user_id && lms_is_user_logged_in()) {
 			$wp_user = wp_get_current_user();
 			if ($wp_user && $wp_user->ID > 0) {
 				$user_id = $wp_user->ID;
@@ -1866,33 +1918,17 @@ class LMS_Chat
 			return new WP_Error('exception', 'メッセージ送信中にエラーが発生しました: ' . $e->getMessage());
 		}
 
-		// メッセージデータ取得
-		$lms_users_table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}lms_users'");
-		
-		if ($lms_users_table_exists) {
-			$message_data = $wpdb->get_row($wpdb->prepare(
-				"SELECT t.*,
-						COALESCE(lms_u.display_name, wp_u.display_name, wp_u.user_nicename, 'ユーザー') as display_name,
-						COALESCE(lms_u.avatar_url, '') as avatar_url,
-						TIME(t.created_at) as message_time
-				FROM {$wpdb->prefix}lms_chat_thread_messages t
-				LEFT JOIN {$wpdb->prefix}lms_users lms_u ON t.user_id = lms_u.id
-				LEFT JOIN {$wpdb->users} wp_u ON t.user_id = wp_u.ID
-				WHERE t.id = %d",
-				$message_id
-			));
-		} else {
-			$message_data = $wpdb->get_row($wpdb->prepare(
-				"SELECT t.*,
-						COALESCE(wp_u.display_name, wp_u.user_nicename, 'ユーザー') as display_name,
-						'' as avatar_url,
-						TIME(t.created_at) as message_time
-				FROM {$wpdb->prefix}lms_chat_thread_messages t
-				LEFT JOIN {$wpdb->users} wp_u ON t.user_id = wp_u.ID
-				WHERE t.id = %d",
-				$message_id
-			));
-		}
+		// メッセージデータ取得（LMS独自ユーザーテーブルのみ使用）
+		$message_data = $wpdb->get_row($wpdb->prepare(
+			"SELECT t.*,
+					COALESCE(lms_u.display_name, CONCAT('ユーザー', t.user_id)) as display_name,
+					COALESCE(lms_u.avatar_url, '') as avatar_url,
+					TIME(t.created_at) as message_time
+			FROM {$wpdb->prefix}lms_chat_thread_messages t
+			LEFT JOIN {$wpdb->prefix}lms_users lms_u ON t.user_id = lms_u.id
+			WHERE t.id = %d",
+			$message_id
+		));
 
 		if (!$message_data) {
 			return new WP_Error('message_not_found', '送信されたメッセージを取得できませんでした。');
@@ -1908,10 +1944,18 @@ class LMS_Chat
 
 		if ($attachments) {
 			$upload_dir = wp_upload_dir();
+			$upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
 			foreach ($attachments as &$attachment) {
-				$attachment->url = $upload_dir['baseurl'] . '/chat-files/' . $attachment->file_path;
+				$attachment->url = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->file_path;
 				if ($attachment->thumbnail_path) {
-					$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files/' . $attachment->thumbnail_path;
+					// サムネイルファイルの存在チェック
+					$thumb_file = $upload_base_dir . '/' . $attachment->thumbnail_path;
+					if (file_exists($thumb_file)) {
+						$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
+					} else {
+						// サムネイルが存在しない場合はnullにする
+						$attachment->thumbnail_path = null;
+					}
 				}
 			}
 			$message_data->attachments = $attachments;
@@ -2384,10 +2428,18 @@ class LMS_Chat
 
 					if ($attachments) {
 						$upload_dir = wp_upload_dir();
+						$upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
 						foreach ($attachments as &$attachment) {
-							$attachment->url = $upload_dir['baseurl'] . '/chat-files/' . $attachment->file_path;
+							$attachment->url = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->file_path;
 							if ($attachment->thumbnail_path) {
-								$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files/' . $attachment->thumbnail_path;
+								// サムネイルファイルの存在チェック
+								$thumb_file = $upload_base_dir . '/' . $attachment->thumbnail_path;
+								if (file_exists($thumb_file)) {
+									$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
+								} else {
+									// サムネイルが存在しない場合はnullにする
+									$attachment->thumbnail_path = null;
+								}
 							}
 						}
 						$message->attachments = $attachments;
@@ -2692,12 +2744,28 @@ class LMS_Chat
 	{
 		global $wpdb;
 		if (!empty($file_ids)) {
-			$wpdb->query($wpdb->prepare(
+			error_log('[attach_files_to_message] message_id: ' . $message_id . ', file_ids: ' . print_r($file_ids, true));
+			
+			$rows_affected = $wpdb->query($wpdb->prepare(
 				"UPDATE {$wpdb->prefix}lms_chat_attachments
 				SET message_id = %d
 				WHERE id IN (" . implode(',', array_fill(0, count($file_ids), '%d')) . ")",
 				array_merge([$message_id], $file_ids)
 			));
+			
+			error_log('[attach_files_to_message] rows_affected: ' . $rows_affected);
+			
+			if ($rows_affected === false) {
+				error_log('[attach_files_to_message] ERROR: ' . $wpdb->last_error);
+			}
+			
+			// 🔥 確認: 更新後のファイル情報を取得
+			$updated_files = $wpdb->get_results($wpdb->prepare(
+				"SELECT id, message_id, file_name FROM {$wpdb->prefix}lms_chat_attachments WHERE id IN (" . implode(',', array_fill(0, count($file_ids), '%d')) . ")",
+				$file_ids
+			), ARRAY_A);
+			
+			error_log('[attach_files_to_message] updated_files: ' . print_r($updated_files, true));
 		}
 	}
 
@@ -2905,11 +2973,11 @@ class LMS_Chat
 		
 		$user_id = 0;
 		if (function_exists('lms_get_current_user_id')) {
-			$user_id = lms_get_current_user_id();
+			$user_id = lms_lms_get_current_user_id();
 		} elseif (isset($_SESSION['lms_user_id'])) {
 			$user_id = intval($_SESSION['lms_user_id']);
 		} elseif (function_exists('get_current_user_id')) {
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 		}
 		if (!$message_id) {
 			wp_send_json_error('メッセージIDが無効です。');
@@ -2973,13 +3041,13 @@ class LMS_Chat
 
 		$upload_dir = wp_upload_dir();
 		foreach ($attachments as $attachment) {
-			$file_path = $upload_dir['basedir'] . '/chat-files/' . $attachment->file_path;
+			$file_path = $upload_dir['basedir'] . '/chat-files-uploads/' . $attachment->file_path;
 			if (file_exists($file_path)) {
 				@unlink($file_path);
 			}
 
 			if (!empty($attachment->thumbnail_path)) {
-				$thumb_path = $upload_dir['basedir'] . '/chat-files/' . $attachment->thumbnail_path;
+				$thumb_path = $upload_dir['basedir'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
 				if (file_exists($thumb_path)) {
 					@unlink($thumb_path);
 				}
@@ -3808,7 +3876,7 @@ class LMS_Chat
 		}
 
 		$is_logged_in = false;
-		if (is_user_logged_in()) {
+		if (lms_is_user_logged_in()) {
 			$is_logged_in = true;
 		} elseif (isset($_SESSION['lms_user_id']) && intval($_SESSION['lms_user_id']) > 0) {
 			$is_logged_in = true;
@@ -3825,7 +3893,7 @@ class LMS_Chat
 		$user_id = 0;
 		
 		if (function_exists('lms_get_current_user_id')) {
-			$user_id = lms_get_current_user_id();
+			$user_id = lms_lms_get_current_user_id();
 		}
 		
 		if (!$user_id && isset($_POST['user_id']) && intval($_POST['user_id']) > 0) {
@@ -3833,7 +3901,7 @@ class LMS_Chat
 		}
 		
 		if (!$user_id && function_exists('get_current_user_id')) {
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 		}
 		if (!$message_id || !$emoji || !$user_id) {
 			wp_send_json_error('必要なパラメータが不足しています。');
@@ -4004,7 +4072,7 @@ class LMS_Chat
 			$this->acquireSession();
 
 			$session_user_id = isset($_SESSION['lms_user_id']) ? intval($_SESSION['lms_user_id']) : 0;
-			$user_authenticated = $session_user_id > 0 || is_user_logged_in();
+			$user_authenticated = $session_user_id > 0;
 
 			$this->releaseSession();
 
@@ -4021,7 +4089,8 @@ class LMS_Chat
 
 			$channel_id = isset($_POST['channel_id']) ? intval($_POST['channel_id']) : (isset($_GET['channel_id']) ? intval($_GET['channel_id']) : 0);
 			$last_timestamp = isset($_POST['last_timestamp']) ? intval($_POST['last_timestamp']) : (isset($_GET['last_timestamp']) ? intval($_GET['last_timestamp']) : 0);
-			$user_id = $session_user_id > 0 ? $session_user_id : (is_user_logged_in() ? get_current_user_id() : 0);
+			// ⚠️ LMSユーザーのみ - WordPressユーザーは考慮しない
+			$user_id = $session_user_id;
 
 			if (!$channel_id || !$user_id) {
 					wp_send_json_error('必要なパラメータが不足しています');
@@ -4044,7 +4113,8 @@ class LMS_Chat
 		$session_user_id = isset($_SESSION['lms_user_id']) ? intval($_SESSION['lms_user_id']) : 0;
 		$this->releaseSession();
 
-		$user_id = $session_user_id > 0 ? $session_user_id : (is_user_logged_in() ? get_current_user_id() : 0);
+		// ⚠️ LMSユーザーのみ - WordPressユーザーは考慮しない
+		$user_id = $session_user_id;
 		if (!$user_id) {
 			wp_send_json_error('認証が必要です');
 			return;
@@ -4126,7 +4196,7 @@ class LMS_Chat
 
 		$user_id = 0;
 		if (function_exists('lms_get_current_user_id')) {
-			$user_id = (int) lms_get_current_user_id();
+			$user_id = (int) lms_lms_get_current_user_id();
 		}
 		if (!$user_id && isset($_POST['user_id'])) {
 			$user_id = intval($_POST['user_id']);
@@ -4135,7 +4205,7 @@ class LMS_Chat
 			$user_id = $session_user_id;
 		}
 		if (!$user_id) {
-			$user_id = is_user_logged_in() ? get_current_user_id() : 0;
+			$user_id = lms_is_user_logged_in() ? lms_get_current_user_id() : 0;
 		}
 
 		if (!$user_id) {
@@ -4558,13 +4628,13 @@ class LMS_Chat
 
 		$upload_dir = wp_upload_dir();
 		foreach ($attachments as $attachment) {
-			$file_path = $upload_dir['basedir'] . '/chat-files/' . $attachment->file_path;
+			$file_path = $upload_dir['basedir'] . '/chat-files-uploads/' . $attachment->file_path;
 			if (file_exists($file_path)) {
 				@unlink($file_path);
 			}
 
 			if (!empty($attachment->thumbnail_path)) {
-				$thumb_path = $upload_dir['basedir'] . '/chat-files/' . $attachment->thumbnail_path;
+				$thumb_path = $upload_dir['basedir'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
 				if (file_exists($thumb_path)) {
 					@unlink($thumb_path);
 				}
@@ -4674,12 +4744,12 @@ class LMS_Chat
 	 */
 	private function clear_thread_cache($parent_message_id)
 	{
-		$thread_info_key = $this->cache_helper->generate_key([$parent_message_id, get_current_user_id()], 'lms_chat_thread_info');
+		$thread_info_key = $this->cache_helper->generate_key([$parent_message_id, lms_get_current_user_id()], 'lms_chat_thread_info');
 		$this->cache_helper->delete($thread_info_key, 'lms_chat');
 		$this->bump_thread_reaction_version($parent_message_id);
 
 		for ($page = 1; $page <= 10; $page++) {
-			$thread_messages_key = $this->cache_helper->generate_key([$parent_message_id, $page, 50, get_current_user_id()], 'lms_chat_thread_messages');
+			$thread_messages_key = $this->cache_helper->generate_key([$parent_message_id, $page, 50, lms_get_current_user_id()], 'lms_chat_thread_messages');
 			$this->cache_helper->delete($thread_messages_key, 'lms_chat');
 		}
 
@@ -4895,7 +4965,7 @@ class LMS_Chat
 		$this->acquireSession();
 
 		$session_user_id = isset($_SESSION['lms_user_id']) ? intval($_SESSION['lms_user_id']) : 0;
-		$user_authenticated = $session_user_id > 0 || is_user_logged_in();
+		$user_authenticated = $session_user_id > 0;
 
 		$this->releaseSession();
 
@@ -5063,7 +5133,7 @@ class LMS_Chat
 			'is_thread' => $is_thread,
 			'channel_id' => $channel_id,
 			'thread_id' => $thread_parent_id,
-			'user_id' => get_current_user_id(),
+			'user_id' => lms_get_current_user_id(),
 			'timestamp' => $event_timestamp,
 		);
 
@@ -5074,7 +5144,7 @@ class LMS_Chat
 				'message_id' => $message_id,
 				'thread_id' => $thread_parent_id,
 				'channel_id' => $channel_id,
-				'user_id' => get_current_user_id(),
+				'user_id' => lms_get_current_user_id(),
 				'data' => wp_json_encode($event_data),
 				'timestamp' => $event_timestamp,
 				'expires_at' => $event_timestamp + 86400,
@@ -5176,7 +5246,7 @@ class LMS_Chat
 			
 			do_action('lms_thread_reaction_updated', $message_id, $channel_id, $resolved_thread_id, $reactions);
 		} else {
-			do_action('lms_reaction_updated', $message_id, $channel_id, $reactions, get_current_user_id());
+			do_action('lms_reaction_updated', $message_id, $channel_id, $reactions, lms_get_current_user_id());
 		}
 		
 		if (class_exists('LMS_Unified_LongPoll')) {
@@ -5185,7 +5255,7 @@ class LMS_Chat
 			if ($is_thread && method_exists($unified_longpoll, 'on_thread_reaction_updated')) {
 				$unified_longpoll->on_thread_reaction_updated($message_id, $channel_id, $resolved_thread_id, $reactions);
 			} elseif (!$is_thread && method_exists($unified_longpoll, 'on_reaction_updated')) {
-				$unified_longpoll->on_reaction_updated($message_id, $channel_id, $reactions, get_current_user_id());
+				$unified_longpoll->on_reaction_updated($message_id, $channel_id, $reactions, lms_get_current_user_id());
 			}
 		}
 	}
@@ -5209,7 +5279,7 @@ class LMS_Chat
 			'is_thread' => true,
 			'channel_id' => $channel_id,
 			'thread_id' => $resolved_thread_id,
-			'user_id' => get_current_user_id(),
+			'user_id' => lms_get_current_user_id(),
 			'timestamp' => $current_time,
 			'source' => 'direct_broadcast'
 		];
@@ -5221,7 +5291,7 @@ class LMS_Chat
 				'message_id' => $message_id,
 				'thread_id' => $resolved_thread_id,
 				'channel_id' => $channel_id,
-				'user_id' => get_current_user_id(),
+				'user_id' => lms_get_current_user_id(),
 				'data' => wp_json_encode($event_data),
 				'timestamp' => $current_time,
 				'expires_at' => $current_time + 86400, // 24時間で削除
@@ -6633,8 +6703,8 @@ class LMS_Chat
 				$is_logged_in = true;
 			}
 
-			if (!$is_logged_in && is_user_logged_in()) {
-				$user_id = get_current_user_id();
+			if (!$is_logged_in && lms_is_user_logged_in()) {
+				$user_id = lms_get_current_user_id();
 				$is_logged_in = true;
 			}
 
@@ -7748,10 +7818,18 @@ class LMS_Chat
 
 				if ($attachments) {
 					$upload_dir = wp_upload_dir();
+					$upload_base_dir = ABSPATH . 'wp-content/chat-files-uploads';
 					foreach ($attachments as &$attachment) {
-						$attachment->url = $upload_dir['baseurl'] . '/chat-files/' . $attachment->file_path;
+						$attachment->url = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->file_path;
 						if ($attachment->thumbnail_path) {
-							$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files/' . $attachment->thumbnail_path;
+							// サムネイルファイルの存在チェック
+							$thumb_file = $upload_base_dir . '/' . $attachment->thumbnail_path;
+							if (file_exists($thumb_file)) {
+								$attachment->thumbnail = $upload_dir['baseurl'] . '/chat-files-uploads/' . $attachment->thumbnail_path;
+							} else {
+								// サムネイルが存在しない場合はnullにする
+								$attachment->thumbnail_path = null;
+							}
 						}
 					}
 					$message->attachments = $attachments;
@@ -7922,8 +8000,8 @@ class LMS_Chat
 			
 			if (isset($_SESSION['lms_user_id']) && $_SESSION['lms_user_id'] > 0) {
 				$user_id = intval($_SESSION['lms_user_id']);
-			} elseif (function_exists('is_user_logged_in') && is_user_logged_in()) {
-				$user_id = get_current_user_id();
+			} elseif (function_exists('is_user_logged_in') && lms_is_user_logged_in()) {
+				$user_id = lms_get_current_user_id();
 			}
 			
 			$new_nonce = wp_create_nonce('lms_ajax_nonce');
@@ -8441,8 +8519,8 @@ class LMS_Chat
 				}
 			}
 		}
-		elseif (is_user_logged_in()) {
-			$temp_user_id = get_current_user_id();
+		elseif (lms_is_user_logged_in()) {
+			$temp_user_id = lms_get_current_user_id();
 			if ($temp_user_id > 0) {
 				$user_id = intval($temp_user_id);
 			}
@@ -8615,7 +8693,7 @@ class LMS_Chat
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 			if (!$user_id) {
 				wp_send_json_error('User not authenticated');
 				return;
@@ -8690,7 +8768,7 @@ class LMS_Chat
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 			if (!$user_id) {
 				wp_send_json_error('User not authenticated');
 				return;
@@ -8731,7 +8809,7 @@ class LMS_Chat
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 			if (!$user_id) {
 				wp_send_json_error('User not authenticated');
 				return;
@@ -8776,7 +8854,7 @@ class LMS_Chat
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 			
 			if (!$user_id) {
 				wp_send_json_error('User not authenticated');
@@ -8818,7 +8896,7 @@ class LMS_Chat
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 			if (!$user_id) {
 				wp_send_json_error('User not authenticated');
 				return;
@@ -8863,7 +8941,7 @@ class LMS_Chat
 			return;
 		}
 
-		$user_id = get_current_user_id();
+		$user_id = lms_get_current_user_id();
 		if (!$user_id) {
 			wp_send_json_error('User not authenticated');
 			return;
@@ -8908,7 +8986,7 @@ class LMS_Chat
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			$user_id = lms_get_current_user_id();
 			if (!$user_id) {
 				wp_send_json_error('User not logged in');
 				return;

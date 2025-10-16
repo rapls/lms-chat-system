@@ -290,7 +290,13 @@ class LMS_Unified_LongPoll
     public function disable_short_polling()
     {
         // 統合ロングポーリングが有効な場合、古いsetIntervalを無効化
-        if (is_user_logged_in()) {
+        if (lms_is_user_logged_in()) {
+            // ⚠️ セッションを確実に開始してからユーザーIDを取得
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+                session_start();
+            }
+            $current_user_id = isset($_SESSION['lms_user_id']) ? intval($_SESSION['lms_user_id']) : 0;
+
             // 統合ロングポーリングクライアントの読み込み
             wp_enqueue_script(
                 'lms-unified-longpoll',
@@ -314,7 +320,7 @@ class LMS_Unified_LongPoll
                 'enabled' => true, // 統合Long Polling有効化
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('lms_unified_longpoll'),
-                'userId' => get_current_user_id(),
+                'userId' => $current_user_id,
                 'timeout' => 30000,
                 'reconnectDelay' => 1000,
                 'maxConnections' => 3,
@@ -817,11 +823,19 @@ class LMS_Unified_LongPoll
             'action' => 'created'
         ];
 
+        // 🔥 修正: 完全なデータ取得済みフラグ
+        $data_is_complete = false;
+
         // 🔥 修正: メッセージデータの詳細チェックと柔軟な処理
         if ($message_data && is_array($message_data)) {
+            // デバッグログ
+            error_log('[LMS_Unified_LongPoll] on_message_created - message_data: ' . print_r($message_data, true));
+            
             // メッセージ内容とユーザー名が存在する場合のみ使用
             $has_message = !empty($message_data['message']) || !empty($message_data['content']);
             $has_user_name = !empty($message_data['user_name']) || !empty($message_data['display_name']);
+            
+            error_log('[LMS_Unified_LongPoll] has_message: ' . ($has_message ? 'true' : 'false') . ', has_user_name: ' . ($has_user_name ? 'true' : 'false'));
             
             if ($has_message && $has_user_name) {
                 $event_data = array_merge($event_data, [
@@ -835,50 +849,90 @@ class LMS_Unified_LongPoll
                     'attachments' => $message_data['attachments'] ?? []
                 ]);
                 
-                // Debug logging removed
+                // 🔥 修正: 完全なデータ取得済みフラグをセット
+                $data_is_complete = true;
+                error_log('[LMS_Unified_LongPoll] 完全なデータ取得済み - DB取得とフォールバックをスキップ');
             } else {
-                // Debug logging removed
+                error_log('[LMS_Unified_LongPoll] メッセージデータが不完全 - DB取得に切り替え');
                 $message_data = null; // Force DB lookup
             }
-        } else {
-            // メッセージデータが提供されていない場合はDBから取得
-            global $wpdb;
-            
-            // 🔥 修正: LMS独自ユーザーテーブルと結合（WordPressユーザーではなく）
-            $message_details = $wpdb->get_row($wpdb->prepare(
-                "SELECT m.*, u.display_name as user_name, u.username
-                 FROM {$wpdb->prefix}lms_chat_messages m
-                 LEFT JOIN {$wpdb->prefix}lms_users u ON m.user_id = u.id
-                 WHERE m.id = %d",
-                $message_id
-            ), ARRAY_A);
         }
+        
+        // 🔥 修正: データが不完全な場合のみDB取得とフォールバック処理
+        if (!$data_is_complete) {
+            // message_dataが不完全、またはnullの場合はDBから取得
+            if (!$message_data) {
+                global $wpdb;
+                error_log('[LMS_Unified_LongPoll] DBからメッセージ取得 - message_id: ' . $message_id);
 
-        if ($message_details) {
-            // 🔥 修正: ユーザー名を確実に取得して設定
-            $user_name = $message_details['user_name'] ?? $message_details['display_name'] ?? 'ユーザー' . $user_id;
-            
-            $event_data = array_merge($event_data, [
-                'user_name' => $user_name,
-                'display_name' => $user_name,        // 🔥 追加: フロントエンド互換性
-                'message' => $message_details['message'] ?? '',
-                'content' => $message_details['message'] ?? '',
-                'created_at' => $message_details['created_at'] ?? date('Y-m-d H:i:s'),
-                'timestamp' => $message_details['created_at'] ?? date('Y-m-d H:i:s')
-            ]);
-        } else {
-            // 🔥 追加: DB取得失敗時のフォールバック
-            // Debug logging removed
-            
-            // 最低限のデータを設定
-            $event_data = array_merge($event_data, [
-                'user_name' => 'ユーザー' . $user_id,
-                'display_name' => 'ユーザー' . $user_id,
-                'message' => 'メッセージ (ID: ' . $message_id . ')',
-                'content' => 'メッセージ (ID: ' . $message_id . ')',
-                'created_at' => date('Y-m-d H:i:s'),
-                'timestamp' => date('Y-m-d H:i:s')
-            ]);
+                // 🔥 修正: LMS独自ユーザーテーブルと結合（WordPressユーザーではなく）
+                $message_details = $wpdb->get_row($wpdb->prepare(
+                    "SELECT m.*, u.display_name as user_name, u.username
+                     FROM {$wpdb->prefix}lms_chat_messages m
+                     LEFT JOIN {$wpdb->prefix}lms_users u ON m.user_id = u.id
+                     WHERE m.id = %d",
+                    $message_id
+                ), ARRAY_A);
+            } else {
+                // message_dataが存在する場合は、それをそのまま使用
+                $message_details = null;
+            }
+
+            if ($message_details) {
+                // 🔥 修正: ユーザー名を確実に取得して設定
+                $user_name = $message_details['user_name'] ?? $message_details['display_name'] ?? 'ユーザー' . $user_id;
+                
+                // 添付ファイルを取得
+                $attachments_results = $wpdb->get_results($wpdb->prepare(
+                    "SELECT id, file_name, file_path, file_size, mime_type, thumbnail_path
+                     FROM {$wpdb->prefix}lms_chat_attachments 
+                     WHERE message_id = %d
+                     ORDER BY created_at ASC",
+                    $message_id
+                ), ARRAY_A);
+                
+                $attachments = [];
+                if ($attachments_results) {
+                    $base_url = site_url('wp-content/chat-files-uploads');
+                    foreach ($attachments_results as $attachment) {
+                        $attachments[] = [
+                            'id' => $attachment['id'],
+                            'name' => $attachment['file_name'],
+                            'file_name' => $attachment['file_name'],
+                            'url' => $base_url . '/' . $attachment['file_path'],
+                            'file_path' => $attachment['file_path'],
+                            'type' => $attachment['mime_type'],
+                            'mime_type' => $attachment['mime_type'],
+                            'size' => $attachment['file_size'],
+                            'file_size' => $attachment['file_size'],
+                            'thumbnail' => !empty($attachment['thumbnail_path']) ? $base_url . '/' . $attachment['thumbnail_path'] : null
+                        ];
+                    }
+                }
+                
+                $event_data = array_merge($event_data, [
+                    'user_name' => $user_name,
+                    'display_name' => $user_name,        // 🔥 追加: フロントエンド互換性
+                    'message' => $message_details['message'] ?? '',
+                    'content' => $message_details['message'] ?? '',
+                    'created_at' => $message_details['created_at'] ?? date('Y-m-d H:i:s'),
+                    'timestamp' => $message_details['created_at'] ?? date('Y-m-d H:i:s'),
+                    'attachments' => $attachments
+                ]);
+            } else {
+                // 🔥 追加: DB取得失敗時のフォールバック
+                // Debug logging removed
+                
+                // 最低限のデータを設定
+                $event_data = array_merge($event_data, [
+                    'user_name' => 'ユーザー' . $user_id,
+                    'display_name' => 'ユーザー' . $user_id,
+                    'message' => 'メッセージ (ID: ' . $message_id . ')',
+                    'content' => 'メッセージ (ID: ' . $message_id . ')',
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+            }
         }
 
         $this->add_event([
@@ -901,7 +955,7 @@ class LMS_Unified_LongPoll
             'priority' => self::PRIORITY_CRITICAL,
             'channel_id' => $channel_id,
             'message_id' => $message_id,
-            'user_id' => get_current_user_id(),
+            'user_id' => lms_get_current_user_id(),
             'data' => [
                 'message_id' => $message_id,
                 'action' => 'deleted'
@@ -968,9 +1022,9 @@ class LMS_Unified_LongPoll
      */
     public function on_thread_message_deleted($message_id, $thread_id, $channel_id)
     {
-        
+
         // 🔧 修正: スレッドメッセージ削除の詳細データをJavaScript側に送信
-        $current_user_id = get_current_user_id();
+        $current_user_id = lms_get_current_user_id();
         
         $this->add_event([
             'event_type' => self::EVENT_THREAD_DELETE,
@@ -1024,7 +1078,7 @@ class LMS_Unified_LongPoll
             'channel_id' => $channel_id,
             'message_id' => $message_id,
             'thread_id' => $thread_id,
-            'user_id' => get_current_user_id(),
+            'user_id' => lms_get_current_user_id(),
             'data' => [
                 'reactions' => $reactions,
                 'message_id' => $message_id,
@@ -1257,7 +1311,7 @@ class LMS_Unified_LongPoll
      */
     public function handle_config_update()
     {
-        if (!current_user_can('manage_options')) {
+        if (!lms_current_user_can('manage_options')) {
             wp_send_json_error('権限が不足しています');
             return;
         }

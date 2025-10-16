@@ -47,6 +47,65 @@
 	window.LMSChat.state = window.LMSChat.state || {};
 	window.LMSChat.utils = window.LMSChat.utils || {};
 
+	// 🛡️ 日付セパレーター削除防止システム（MutationObserver）
+	const DateSeparatorGuard = (() => {
+		let observer = null;
+		const separatorCache = new Map(); // data-date-key → separator HTML
+
+		const startProtection = () => {
+			if (observer) {
+				return; // 既に起動済み
+			}
+
+			observer = new MutationObserver((mutations) => {
+				mutations.forEach((mutation) => {
+					if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+						mutation.removedNodes.forEach((removedNode) => {
+							// date-separatorが削除された場合
+							if (removedNode.nodeType === 1 && removedNode.classList?.contains('date-separator')) {
+								const $parentGroup = $(mutation.target).closest('.message-group');
+								if ($parentGroup.length > 0) {
+									// 削除されたセパレーターを即座に復元
+									const $existingSeparator = $parentGroup.find('.date-separator').first();
+									if ($existingSeparator.length === 0) {
+										// セパレーターが完全に消失している場合のみ復元
+										$parentGroup.prepend(removedNode);
+									}
+								}
+							}
+						});
+					}
+				});
+			});
+
+			// chat-messagesコンテナを監視
+			const $container = $('#chat-messages')[0];
+			if ($container) {
+				observer.observe($container, {
+					childList: true,
+					subtree: true
+				});
+			}
+		};
+
+		const stopProtection = () => {
+			if (observer) {
+				observer.disconnect();
+				observer = null;
+			}
+		};
+
+		return {
+			start: startProtection,
+			stop: stopProtection
+		};
+	})();
+
+	// ページ読み込み完了後に保護システムを起動
+	$(document).ready(() => {
+		DateSeparatorGuard.start();
+	});
+
 	// 🔥 SCROLL FLICKER FIX: チャンネル切り替え中の完全ロック管理システム
 	const ChannelSwitchGuard = (() => {
 		let lockCount = 0;
@@ -835,6 +894,13 @@
 				if (!data.payload.content && data.payload.message) {
 					data.payload.content = data.payload.message;
 				}
+				
+				// ✅ attachmentsが含まれていることを確認
+				if (!data.payload.attachments) {
+					data.payload.attachments = [];
+				}
+
+				
 				if (
 					!messageText ||
 					messageText.trim() === '' ||
@@ -1148,7 +1214,7 @@
 		}
 		if (file.file_path) {
 			const baseUrl = window.lmsChat.uploadBaseUrl || '';
-			return `${baseUrl}/chat-files/${file.file_path}`;
+			return `${baseUrl}/chat-files-uploads/${file.file_path}`;
 		}
 		if (file.id && (file.file_name || file.name)) {
 			return `${window.lmsChat.ajaxUrl}?action=lms_get_file&file_id=${file.id}&nonce=${window.lmsChat.nonce}`;
@@ -1174,13 +1240,13 @@
 			if (file.thumbnail) {
 				thumbnailUrl = file.thumbnail.startsWith('http')
 					? file.thumbnail
-					: `${window.lmsChat.uploadBaseUrl}/chat-files/${file.thumbnail}`;
+					: `${window.lmsChat.uploadBaseUrl}/chat-files-uploads/${file.thumbnail}`;
 			} else {
 				thumbnailUrl = fileUrl;
 			}
 		}
 		const previewHtml = isImage
-			? `<img src="${thumbnailUrl}" alt="${utils.escapeHtml(fileName)}">`
+			? `<img src="${thumbnailUrl}" alt="${utils.escapeHtml(fileName)}" onerror="this.onerror=null; this.src='${fileUrl}';">`
 			: `<img src="${mapMimeTypeToIcon(fileType, fileName)}" class="file-icon" alt="${
 					fileType || '不明なファイル形式'
 			  }">`;
@@ -1486,12 +1552,16 @@
 			const safeMsg = escapeHtmlFunc(messageText).replace(/\r\n|\n|\r/g, '<br>');
 			const msgHtml = linkifyUrlsFunc(safeMsg);
 			let attachmentsHtml = '';
+			// 🔥 デバッグ: 添付ファイル情報の確認
+			if (message.id) {
+			}
 			if (message.attachments && message.attachments.length > 0) {
 				attachmentsHtml = '<div class="message-attachments">';
 				message.attachments.forEach((file) => {
 					attachmentsHtml += createAttachmentHtml(file);
 				});
 				attachmentsHtml += '</div>';
+			} else {
 			}
 			const threadButtonHtml = createThreadButtonHtml(message);
 			const threadUnreadCount =
@@ -1988,8 +2058,9 @@
 				});
 			};
 			fixAllNewMarks();
-			const currentChannelId = state.currentChannel;
-			if (isChannelSwitch || state.isDateJumping) {
+		
+		const currentChannelId = state.currentChannel;
+		if (isChannelSwitch || state.isDateJumping) {
 				const $container = $('#chat-messages');
 				$container.empty();
 				$container.html('');
@@ -2002,9 +2073,41 @@
 			if ($loadingMessages.length > 0) {
 				$loadingMessages.remove();
 			}
+			
+			// セパレーター補完処理は processMessageGroup 実行後に移動
+			
 			for (const group of data.messages) {
 				await processMessageGroup(group, isNewMessages, isChannelSwitch);
 			}
+			
+			// 🔥 修正: 既存のメッセージグループにセパレーターを補完（processMessageGroup実行後）
+			$('#chat-messages .message-group').each(function() {
+				const $group = $(this);
+				const dateKey = $group.attr('data-date-key');
+				
+				// セパレーターが存在しない場合のみ追加
+				if (dateKey && !$group.find('.date-separator').length) {
+					try {
+						// dateKeyから日付を復元
+						const dateParts = dateKey.split('-');
+						if (dateParts.length === 3) {
+							const groupDate = new Date(
+								parseInt(dateParts[0], 10),
+								parseInt(dateParts[1], 10) - 1,
+								parseInt(dateParts[2], 10)
+							);
+							
+							if (!isNaN(groupDate.getTime())) {
+								const formattedDate = getFormattedDate(groupDate);
+								const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
+								$group.prepend(separatorHtml);
+							}
+						}
+					} catch (e) {
+						// エラーは無視
+					}
+				}
+			});
 
 			// 🔥 SCROLL FLICKER FIX: スレッド情報更新を完全削除
 			// processMessageGroup内で既に処理されているため、ここでの重複処理は不要
@@ -2073,17 +2176,27 @@
 						}
 					}
 
-					// 🔥 SCROLL FLICKER FIX: 2000ms後にロック解除（確実にDOM更新完了を待つ）
-					setTimeout(() => {
-						state.isChannelSwitching = false;
-						ChannelSwitchGuard.unlock('scroll-anchor');
-						ChannelSwitchGuard.unlock('channel-switch');
-					}, 2000);
-				}
+					// 🛡️ MutationObserverが自動的にセパレーターを保護します
+		
+		}
 			}
-			// 🔥 SCROLL FLICKER FIX: スレッド情報更新は既にLine 1933-1947で完了しているため、
-			// スクロール処理後の重複更新を全て削除（5回の重複を削除）
-			$(document).trigger('messages:displayed', [data.messages, isNewMessages, isChannelSwitch]);
+			
+			// 🔍 デバッグ: 遅延確認
+			setTimeout(() => {
+				
+				// 各グループのセパレーター存在を確認
+				$('#chat-messages .message-group').each(function(index) {
+					const $group = $(this);
+					const dateKey = $group.attr('data-date-key');
+					const hasSeparator = $group.find('.date-separator').length > 0;
+				});
+			}, 2000);
+			
+			setTimeout(() => {
+			}, 5000);
+			
+			// 🔍 デバッグ: messages:displayedイベントを一時的に無効化
+			// $(document).trigger('messages:displayed', [data.messages, isNewMessages, isChannelSwitch]);
 
 			// 🔥 SCROLL FLICKER FIX: .loading-messagesの削除を即座に実行（setTimeoutを削除）
 			const $remainingLoading = $('#chat-messages .loading-messages');
@@ -2284,41 +2397,14 @@
 					return;
 				}
 				let $targetDateGroup = $messageContainer.find(`[data-date-key="${dateKey}"]`);
-				if ($targetDateGroup.length > 0) {
-					if ($targetDateGroup.find('.date-separator').length === 0) {
-						const formattedDate = getFormattedDate(messageDate);
-						const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
-						$targetDateGroup.prepend(separatorHtml);
-					}
-				} else {
-					const $newGroup = $('<div class="message-group"></div>').attr('data-date-key', dateKey);
+				if ($targetDateGroup.length === 0) {
+					// 新しい日付グループを作成
 					const formattedDate = getFormattedDate(messageDate);
-					const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
-					$newGroup.append(separatorHtml);
-					const $existingGroups = $messageContainer.find('.message-group');
-					let inserted = false;
-					if ($existingGroups.length > 0) {
-						const $lastGroup = $existingGroups.last();
-						const lastGroupDateKey = $lastGroup.attr('data-date-key');
-						if (lastGroupDateKey && dateKey >= lastGroupDateKey) {
-							$messageContainer.append($newGroup);
-							inserted = true;
-						} else {
-							$existingGroups.each(function () {
-								const existingDateKey = $(this).attr('data-date-key');
-								if (existingDateKey && dateKey < existingDateKey) {
-									$(this).before($newGroup);
-									inserted = true;
-									return false;
-								}
-							});
-						}
-					}
-					if (!inserted) {
-						$messageContainer.append($newGroup);
-					}
-					$targetDateGroup = $newGroup;
+					const newGroupHtml = `<div class="message-group" data-date-key="${dateKey}"><div class="date-separator"><span class="date-text">${formattedDate}</span></div></div>`;
+					$messageContainer.append(newGroupHtml);
+					$targetDateGroup = $messageContainer.find(`[data-date-key="${dateKey}"]`);
 				}
+
 				if ($targetDateGroup.length > 0) {
 					if (isCurrentUser && message.is_new) {
 						message.is_new = 0;
@@ -2328,6 +2414,8 @@
 						message.data_is_new = true;
 						message.unread_message_class = true;
 					}
+
+					// 🛡️ MutationObserverがセパレーター削除を自動的に防止します
 					const messageHtml = getCachedMessageHtml(message);
 					if (messageHtml) {
 						$targetDateGroup.append(messageHtml);
@@ -2453,8 +2541,6 @@
 						if (isTemp) {
 						}
 					}
-				} else {
-					return;
 				}
 				const $targetGroup = dateKey
 					? $(`.message-group[data-date-key="${dateKey}"]`)
@@ -2480,36 +2566,44 @@
 						}
 					}
 				}
-				if (window.UnifiedScrollManager) {
-				} else {
-					const executeAppendMessageScroll = () => {
-						if (options.fromLongPoll) {
-							return;
+				// スクロール処理（自分が送信したメッセージの場合のみ）
+				const executeAppendMessageScroll = () => {
+					if (options.fromLongPoll) {
+						return;
+					}
+					if (isCurrentUser) {
+						if (window.LMSChat && window.LMSChat.messages) {
+							window.LMSChat.messages.preventAutoScroll = false;
 						}
-						if (isCurrentUser) {
-							if (window.LMSChat && window.LMSChat.messages) {
-								window.LMSChat.messages.preventAutoScroll = false;
+						if (window.LMSChat && window.LMSChat.state) {
+							window.LMSChat.state.forceNewMessageScroll = true;
+							window.LMSChat.state.justSentMessage = true;
+							window.LMSChat.state.lastSentTimestamp = new Date(message.created_at).getTime();
+							window.LMSChat.state.lastSentMessageId = message.id;
+							// blockScrollOverrideを解除
+							window.LMSChat.state.blockScrollOverride = false;
+						}
+						// ChannelSwitchGuardのロックも強制解除
+						if (ChannelSwitchGuard.isLocked()) {
+							while (ChannelSwitchGuard.isLocked()) {
+								ChannelSwitchGuard.unlock('appendMessage-current-user');
 							}
-							if (window.LMSChat && window.LMSChat.state) {
-								window.LMSChat.state.forceNewMessageScroll = true;
-								window.LMSChat.state.justSentMessage = true;
-								window.LMSChat.state.lastSentTimestamp = new Date(message.created_at).getTime();
-								window.LMSChat.state.lastSentMessageId = message.id;
-							}
-							setTimeout(() => {
-								if (window.LMSChat?.messages?.scrollManager) {
-									window.LMSChat.messages.scrollManager.scrollForNewMessage(message.id);
-								} else {
-									const container = document.getElementById('chat-messages');
-									if (container) {
-										container.scrollTop = container.scrollHeight;
-									}
+						}
+						setTimeout(() => {
+							if (window.UnifiedScrollManager && typeof window.UnifiedScrollManager.scrollToBottom === 'function') {
+								window.UnifiedScrollManager.scrollToBottom(50, true, 'appendMessage');
+							} else if (window.LMSChat?.messages?.scrollManager) {
+								window.LMSChat.messages.scrollManager.scrollForNewMessage(message.id);
+							} else {
+								const container = document.getElementById('chat-messages');
+								if (container) {
+									container.scrollTop = container.scrollHeight;
 								}
-							}, 50);
-						}
-					};
-					setTimeout(executeAppendMessageScroll, 10);
-				}
+							}
+						}, 50);
+					}
+				};
+				setTimeout(executeAppendMessageScroll, 10);
 				if (!isCurrentUser) {
 					if (window.LMSChat.utils && window.LMSChat.utils.playNotificationSound) {
 						window.LMSChat.utils.playNotificationSound();
@@ -2977,6 +3071,7 @@
 		}
 	};
 	const sendMessage = async (channelId, message, fileIds = []) => {
+		
 		if (window.ChatMasterSync && window.ChatMasterSync.sendMessage) {
 			try {
 				const result = await window.ChatMasterSync.sendMessage(message, channelId, fileIds);
@@ -3105,6 +3200,19 @@
 					throw new Error('メッセージの送信に失敗しました: メッセージIDがありません');
 				}
 				const messageData = response.data.message_data || response.data;
+				
+				// ✅ attachmentsを確実に設定
+				if (!messageData.attachments && response.data.attachments) {
+					messageData.attachments = response.data.attachments;
+				}
+				if (!messageData.attachments) {
+					messageData.attachments = [];
+				}
+				
+				// 🔍 デバッグ: attachmentsの内容を確認
+				if (messageData.attachments && messageData.attachments.length > 0) {
+				}
+				
 				if (!messageData.display_name) {
 					if (messageData.user_name) {
 						messageData.display_name = messageData.user_name;
@@ -3175,6 +3283,27 @@
 						if (messageData.formatted_time) {
 							$tempMessage.find('.message-time').text(messageData.formatted_time);
 						}
+						
+						// ✅ attachmentsを表示
+						if (messageData.attachments && messageData.attachments.length > 0) {
+							
+							// 既存のattachmentsを削除
+							$tempMessage.find('.message-attachments').remove();
+							
+							// 新しいattachmentsを作成
+							let attachmentsHtml = '<div class="message-attachments">';
+							messageData.attachments.forEach(function(file) {
+								attachmentsHtml += createAttachmentHtml(file);
+							});
+							attachmentsHtml += '</div>';
+							
+							
+							// message-contentの後ろに追加
+							$tempMessage.find('.message-content').after(attachmentsHtml);
+							
+						} else {
+						}
+						
 						state.recentSentMessageIds.add(messageData.id);
 						state.recentSentMessageTimes.set(messageData.id, Date.now());
 						if (!state.tempToRealMessageMap) {
@@ -3230,6 +3359,7 @@
 					window.LMSChat.state.lastMessageId = response.data.message_id;
 				}
 				$(document).trigger('message_sent', [messageData]);
+				$(document).trigger('message:sent', [messageData]); // 🔥 ファイルマネージャー用
 				$(document).trigger('lms_chat_message_sent', [messageData]);
 
 				// Long Pollシステムに新しいメッセージを通知（同期強化）
@@ -3260,10 +3390,20 @@
 					window.LMSChat.messages.preventAutoScroll = false;
 					if (window.LMSChat.state) {
 						window.LMSChat.state.forceNewMessageScroll = true;
+						// blockScrollOverrideを解除
+						window.LMSChat.state.blockScrollOverride = false;
+					}
+				}
+				// ChannelSwitchGuardのロックも強制解除
+				if (ChannelSwitchGuard.isLocked()) {
+					while (ChannelSwitchGuard.isLocked()) {
+						ChannelSwitchGuard.unlock('sendMessage-success');
 					}
 				}
 				setTimeout(() => {
-					if (window.LMSChat?.messages?.scrollManager) {
+					if (window.UnifiedScrollManager && typeof window.UnifiedScrollManager.scrollToBottom === 'function') {
+						window.UnifiedScrollManager.scrollToBottom(100, true, 'sendMessage');
+					} else if (window.LMSChat?.messages?.scrollManager) {
 						window.LMSChat.messages.scrollManager.scrollForNewMessage(messageData.id);
 					} else {
 						const container = document.getElementById('chat-messages');
@@ -4221,7 +4361,33 @@
 			return;
 		}
 
+		// メッセージ送信時は強制的にスクロールロックを解除
+		const hasSentMessage = window.LMSChat?.state?.justSentMessage || false;
+		if (hasSentMessage) {
+			if (state.blockScrollOverride) {
+				state.blockScrollOverride = false;
+			}
+			// ChannelSwitchGuardのロックも強制解除
+			if (ChannelSwitchGuard.isLocked()) {
+				// lockCountを強制的に0にリセット
+				while (ChannelSwitchGuard.isLocked()) {
+					ChannelSwitchGuard.unlock('message-sent-force-unlock');
+				}
+			}
+		}
+
 		if (force) {
+			// 強制スクロール時はロックを解除
+			if (state.blockScrollOverride) {
+				state.blockScrollOverride = false;
+			}
+			// ChannelSwitchGuardのロックも強制解除
+			if (ChannelSwitchGuard.isLocked()) {
+				while (ChannelSwitchGuard.isLocked()) {
+					ChannelSwitchGuard.unlock('force-scroll-unlock');
+				}
+			}
+
 			const $messageContainer = $('#chat-messages');
 			if (!$messageContainer.length) return;
 
@@ -4246,8 +4412,8 @@
 
 		const doScroll = () => {
 			const scrollHeight = $messageContainer.prop('scrollHeight');
-			const hasSentMessage = window.LMSChat?.state?.justSentMessage || false;
-			if (state.blockScrollOverride) {
+			// blockScrollOverrideのチェック（日付ジャンプ中のみスクロールロック）
+			if (state.blockScrollOverride && !hasSentMessage) {
 				if (state.finalScrollPosition !== undefined) {
 					$('#chat-messages').scrollTop(state.finalScrollPosition);
 				}
@@ -5439,17 +5605,35 @@
 				}
 			});
 		$('#chat-form')
-			.off('submit')
+			.off('submit') // submitイベントをすべて削除
+			.unbind('submit') // jQueryの古いバージョン対応
 			.on('submit', function (e) {
 				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+				
+				
 				const message = $('#chat-input').val().trim();
-				if (message) {
+				
+				// ✅ window.LMSChat.state.pendingFilesを直接参照
+				const fileIds = window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles 
+					? Array.from(window.LMSChat.state.pendingFiles.keys()) 
+					: [];
+				
+				
+				// メッセージまたはファイルがある場合のみ送信
+				if (message || fileIds.length > 0) {
 					if (window.LMSChat && window.LMSChat.messages) {
 						window.LMSChat.messages.preventAutoScroll = false;
 					}
-					sendMessage(state.currentChannel, message, Array.from(state.pendingFiles.keys()));
-					$('#chat-input').val('').trigger('input');
+					
+					const currentChannel = window.LMSChat && window.LMSChat.state ? window.LMSChat.state.currentChannel : null;
+					if (currentChannel) {
+						sendMessage(currentChannel, message, fileIds);
+						$('#chat-input').val('').trigger('input');
+					}
 				}
+				
 			});
 		const messageQueue = [];
 		let isProcessing = false;
@@ -5524,46 +5708,83 @@
 			.on('keydown', function (e) {
 				if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
 					e.preventDefault();
+					
+					
 					const message = $(this).val().trim();
-					if (message && state.currentChannel) {
-						const fileIds = state.pendingFiles ? Array.from(state.pendingFiles.keys()) : [];
-						$(this).val('').css('height', 'auto').trigger('input');
-						if (state.pendingFiles) {
-							state.pendingFiles.clear();
+					if (message || (window.LMSChat?.state?.pendingFiles && window.LMSChat.state.pendingFiles.size > 0)) {
+						// ✅ window.LMSChat.state.pendingFilesを直接参照
+						const fileIds = window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles
+							? Array.from(window.LMSChat.state.pendingFiles.keys())
+							: [];
+						
+						
+						const currentChannel = window.LMSChat && window.LMSChat.state ? window.LMSChat.state.currentChannel : null;
+						
+						if (currentChannel) {
+							$(this).val('').css('height', 'auto').trigger('input');
+							
+							// pendingFilesをクリア
+							if (window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles) {
+								window.LMSChat.state.pendingFiles.clear();
+							}
+							$('.file-preview').empty();
+							
+							// 直接sendMessageを呼ぶ
+							sendMessage(currentChannel, message, fileIds).catch((error) => {});
+							
 						}
-						$('.file-preview').empty();
-						messageQueue.push({
-							message,
-							channelId: state.currentChannel,
-							fileIds: fileIds,
-						});
-						queueMicrotask(() => processMessageQueue());
 					}
 				}
 			})
 			.on('focus', function () {
 				updateSendButtonState();
 			});
+		// イベントハンドラーは一度だけ登録（setIntervalの外で）
+		const $mainSendButton = $('#main-chat-send-button, #chat-form .send-button').first();
+		if ($mainSendButton.length) {
+			// 既存のハンドラーをすべて削除
+			$mainSendButton.off('click.chatProtection');
+			$mainSendButton.off('click'); // すべてのclickイベントを削除
+			$mainSendButton.unbind('click'); // jQueryの古いバージョン対応
+			
+			// 新しいハンドラーを登録（一度だけ）
+			$mainSendButton.on('click.chatProtection', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				e.stopImmediatePropagation();
+				
+				
+				const $input = $('#chat-input');
+				const message = $input.val().trim();
+				
+				// ✅ window.LMSChat.state.pendingFilesを直接参照
+				const fileIds = window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles 
+					? Array.from(window.LMSChat.state.pendingFiles.keys()) 
+					: [];
+				
+				
+				if (message || fileIds.length > 0) {
+					const currentChannel = window.LMSChat && window.LMSChat.state ? window.LMSChat.state.currentChannel : null;
+					if (currentChannel) {
+						sendMessage(currentChannel, message, fileIds).catch((error) => {});
+						$input.val('').trigger('input');
+					}
+				}
+			});
+		}
+		
+		// setIntervalではボタンの有効/無効のみを制御
 		const mainChatButtonFixInterval = setInterval(() => {
 			const $input = $('#chat-input');
 			const $mainSendButton = $('#main-chat-send-button, #chat-form .send-button').first();
 			if ($input.length && $mainSendButton.length) {
 				const hasText = $input.val().trim().length > 0;
-				if (hasText) {
+				const hasFiles = window.LMSChat && window.LMSChat.state && window.LMSChat.state.pendingFiles 
+					? window.LMSChat.state.pendingFiles.size > 0 
+					: false;
+				
+				if (hasText || hasFiles) {
 					$mainSendButton.prop('disabled', false).addClass('active');
-					$mainSendButton.off('click.chatProtection');
-					$mainSendButton.on('click.chatProtection', function (e) {
-						e.preventDefault();
-						e.stopPropagation();
-						if (hasText) {
-							sendMessage(
-								state.currentChannel,
-								$input.val().trim(),
-								state.pendingFiles ? Array.from(state.pendingFiles.keys()) : []
-							).catch((error) => {});
-							$input.val('').trigger('input');
-						}
-					});
 				} else {
 					$mainSendButton.prop('disabled', true).removeClass('active');
 				}
@@ -6455,9 +6676,14 @@
 				}
 			}
 			if (response.success && response.data) {
+				// 🔥 デバッグ: レスポンスに添付ファイル情報が含まれているか確認
 				if (response.data.messages && response.data.messages.length > 0) {
 					response.data.messages.forEach((group, index) => {
 						if (group.messages && group.messages.length > 0) {
+							group.messages.forEach((msg, msgIndex) => {
+								if (msg.attachments && msg.attachments.length > 0) {
+								}
+							});
 						}
 					});
 				}
@@ -6761,7 +6987,7 @@
 						$targetGroup = $('<div class="message-group"></div>').attr('data-date-key', dateKey);
 						const formattedDate = getFormattedDate(groupDate);
 						const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
-						$targetGroup.append(separatorHtml);
+						$targetGroup.prepend(separatorHtml);
 
 						let inserted = false;
 						const $existingGroups = $messageContainer.find('.message-group');
@@ -6787,6 +7013,7 @@
 							const formattedDate = getFormattedDate(groupDate);
 							const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
 							$targetGroup.prepend(separatorHtml);
+						} else {
 						}
 					}
 					if (group.messages && Array.isArray(group.messages)) {
@@ -6832,8 +7059,17 @@
 							}
 						});
 
+						// 🔍 デバッグ: appendChild前のセパレーター確認
+						const separatorCountBeforeAppend = $targetGroup.find('.date-separator').length;
+						
 						$targetGroup[0].appendChild(fragment);
-						// 🔥 SCROLL FLICKER FIX: markMessageAsReadのsetTimeoutを完全削除
+						
+						// 🔍 デバッグ: appendChild後のセパレーター確認
+						const separatorCountAfterAppend = $targetGroup.find('.date-separator').length;
+						if (separatorCountBeforeAppend > 0 && separatorCountAfterAppend === 0) {
+							console.error('[DateSeparator] ⚠️ appendChildでセパレーターが消失しました！', 'dateKey:', $targetGroup.attr('data-date-key'));
+						}
+					// 🔥 SCROLL FLICKER FIX: markMessageAsReadのsetTimeoutを完全削除
 						// 既読マークの遅延処理がスクロール後にDOM更新を引き起こしていた可能性
 						if (processedCount > 0) {
 							// 既読処理は必要に応じて他の箇所で実行される
@@ -8148,10 +8384,10 @@
 				let $targetDateGroup = $container.find(`[data-date-key="${dateKey}"]`);
 
 				if ($targetDateGroup.length === 0) {
-					$targetDateGroup = $('<div class="message-group"></div>').attr('data-date-key', dateKey);
-					const formattedDate = getFormattedDate(date);
-					const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
-					$targetDateGroup.append(separatorHtml);
+				$targetDateGroup = $('<div class="message-group"></div>').attr('data-date-key', dateKey);
+				const formattedDate = getFormattedDate(date);
+				const separatorHtml = `<div class="date-separator"><span class="date-text">${formattedDate}</span></div>`;
+				$targetDateGroup.prepend(separatorHtml);
 
 					const $existingGroups = $container.find('.message-group');
 					let inserted = false;
@@ -11097,6 +11333,8 @@
 	let isComplementing = false;
 
 	const complementAllMessages = () => {
+		return; // 🔍 デバッグ: complementAllMessages を完全に無効化
+		
 		if (isComplementing) {
 			return;
 		}
@@ -11163,6 +11401,8 @@
 	};
 
 	const startDynamicComplementSystem = () => {
+		return; // 🔍 デバッグ: MutationObserverを無効化
+		
 		const observer = new MutationObserver((mutations) => {
 			let newMessagesFound = false;
 			const newMessageIds = new Set();
@@ -11243,6 +11483,8 @@
 	$(() => {
 		startDynamicComplementSystem();
 
+		return; // 🔍 デバッグ: complementAllMessages を無効化
+		
 		setTimeout(() => {
 			const messageCount = $('#chat-messages .chat-message[data-message-id]').length;
 			if (messageCount > 0 && !isComplementing) {
