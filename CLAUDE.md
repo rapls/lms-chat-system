@@ -1683,3 +1683,102 @@ rm -rf sass/components/backup/
 
 最終更新: 2025-10-15
 作成者: Claude (CSS/SCSSワークフロー追加版)
+
+## スレッドでのファイルアップロード機能修正（2025-10-17実施）
+
+### 修正概要
+
+メインチャット、スレッドの両方で完全に動作するファイルアップロード機能を実現しました。ドラッグ&ドロップ機能、送信済みファイル保護機能を追加し、デバッグログを削除して本番環境に対応しました。
+
+### 修正内容
+
+#### 1. **file-upload-manager.js** (修正)
+
+**修正箇所:**
+
+- **デバッグログ削除（9箇所）**
+  - `console.log('[DEBUG] state.pendingFilesを初期化しました');` 削除
+  - `console.log('[DEBUG] ファイルを登録:', fileId, fileData);` 削除
+  - `console.log('[DEBUG] 現在のpendingFiles:', ...);` 削除
+  - `console.error('File delete error:', error);` 削除
+  - `console.log('[LMSFileManager] beforeunload - uploadedFiles:', fileIds);` 削除（5箇所）
+
+- **ドラッグ&ドロップ機能実装**
+  - メインチャット・スレッドの両方でドラッグ&ドロップ対応
+  - `.chat-input-container`, `.thread-input-container` にドロップゾーン設定
+  - `dragover`, `dragleave`, `drop` イベントハンドラー実装
+  - フォーム要素に `drag-over` クラス付与で視覚的フィードバック
+
+- **送信済みファイル保護機能実装**
+  - `sessionStorage` に送信済みファイルID記録（`lms_sent_file_ids`）
+  - ページ離脱時に未送信ファイルのみ削除（送信済みは保護）
+  - `beforeunload`, `pagehide` イベントで確実なクリーンアップ
+  - `navigator.sendBeacon` で信頼性の高い削除リクエスト送信
+
+**実装された機能:**
+
+```javascript
+// ドラッグ&ドロップ機能
+$(document).ready(function() {
+    const $dropZones = $('.chat-input-container, .thread-input-container');
+
+    $dropZones.on('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).find('form').addClass('drag-over');
+    });
+
+    $dropZones.on('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).find('form').removeClass('drag-over');
+
+        const files = e.originalEvent.dataTransfer.files;
+        const $previewContainer = $(this).find('.file-preview').first();
+
+        Array.from(files).forEach(file => {
+            window.LMSFileManager.uploadFile(file, $previewContainer);
+        });
+    });
+});
+
+// 送信済みファイル保護
+$(document).on('message:sent', function() {
+    const sentFileIds = Array.from(window.LMSFileManager.uploadedFiles.keys());
+    if (sentFileIds.length > 0) {
+        const existingSentIds = JSON.parse(sessionStorage.getItem('lms_sent_file_ids') || '[]');
+        const mergedIds = [...new Set([...existingSentIds, ...sentFileIds])];
+        sessionStorage.setItem('lms_sent_file_ids', JSON.stringify(mergedIds));
+    }
+
+    window.LMSFileManager.uploadedFiles.clear();
+    // ...
+});
+```
+
+### 技術的特徴
+
+- **完全なメインチャット・スレッド対応**: 両方で同一のアップロード機能が動作
+- **ドラッグ&ドロップUI**: 直感的なファイルアップロード操作
+- **送信済みファイル保護**: `sessionStorage` による削除保護で誤削除を防止
+- **デバッグログ完全削除**: 本番環境向けにすべてのconsole.logを削除
+- **エラーハンドリング**: アップロード失敗時のアラート表示
+
+### 構文チェック結果
+
+- ✅ file-upload-manager.js: 構文エラーなし
+- ✅ functions.php: 構文エラーなし
+- ✅ class-lms-chat-upload.php: 構文エラーなし
+
+### 動作確認
+
+1. **メインチャットでのファイルアップロード**: ✅ 動作確認済み
+2. **スレッドでのファイルアップロード**: ✅ 動作確認済み
+3. **ドラッグ&ドロップ**: ✅ 動作確認済み
+4. **送信済みファイル保護**: ✅ 動作確認済み
+5. **デバッグログなし**: ✅ 確認済み
+
+---
+
+最終更新: 2025-10-17
+作成者: Claude (スレッドファイルアップロード修正版)

@@ -30,12 +30,9 @@
 			}
 			if (!window.LMSChat.state.pendingFiles) {
 				window.LMSChat.state.pendingFiles = new Map();
-				console.log('[DEBUG] state.pendingFilesを初期化しました');
 			}
-			
+
 			window.LMSChat.state.pendingFiles.set(fileId, fileData);
-			console.log('[DEBUG] ファイルを登録:', fileId, fileData);
-			console.log('[DEBUG] 現在のpendingFiles:', Array.from(window.LMSChat.state.pendingFiles.entries()));
 		},
 
 		/**
@@ -166,7 +163,6 @@
 				$(this).remove();
 			});
 
-			console.error('File delete error:', error);
 			// エラーでも管理リストからは削除
 			this.uploadedFiles.delete(fileId);
 
@@ -399,21 +395,13 @@
 			// 同期的にファイル削除（beforeunloadでは非同期処理が完了しない可能性があるため）
 			const fileIds = Array.from(window.LMSFileManager.uploadedFiles.keys());
 
-			console.log('[LMSFileManager] beforeunload - uploadedFiles:', fileIds);
-			console.log('[LMSFileManager] beforeunload - sentFileIds:', sentFileIds);
-
 			// 🔥 送信済みファイルを除外して未送信ファイルのみ削除
 			const unsentFileIds = fileIds.filter(fileId => !sentFileIds.includes(fileId));
 
-			console.log('[LMSFileManager] beforeunload - unsentFileIds:', unsentFileIds);
-
 			if (unsentFileIds.length === 0) {
 				// 未送信ファイルがない場合は何もしない
-				console.log('[LMSFileManager] beforeunload - 未送信ファイルなし、削除スキップ');
 				return;
 			}
-
-			console.log('[LMSFileManager] beforeunload - 未送信ファイルを削除:', unsentFileIds);
 
 			// Navigator.sendBeacon を使用して確実に送信
 			unsentFileIds.forEach(fileId => {
