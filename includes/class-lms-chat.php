@@ -2973,7 +2973,7 @@ class LMS_Chat
 		
 		$user_id = 0;
 		if (function_exists('lms_get_current_user_id')) {
-			$user_id = lms_lms_get_current_user_id();
+			$user_id = lms_get_current_user_id();
 		} elseif (isset($_SESSION['lms_user_id'])) {
 			$user_id = intval($_SESSION['lms_user_id']);
 		} elseif (function_exists('get_current_user_id')) {
@@ -3893,7 +3893,7 @@ class LMS_Chat
 		$user_id = 0;
 		
 		if (function_exists('lms_get_current_user_id')) {
-			$user_id = lms_lms_get_current_user_id();
+			$user_id = lms_get_current_user_id();
 		}
 		
 		if (!$user_id && isset($_POST['user_id']) && intval($_POST['user_id']) > 0) {

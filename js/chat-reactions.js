@@ -1440,6 +1440,7 @@
 				
 				// Ajax リクエスト
 				const ajaxConfig = getAjaxConfig();
+
 				const ajaxAction = isThread ? 'lms_toggle_thread_reaction' : 'lms_toggle_reaction';
 				const ajaxData = {
 					action: ajaxAction,
@@ -1449,7 +1450,7 @@
 					user_id: ajaxConfig.user_id,
 					is_removing: isRemoving
 				};
-				
+
 				const response = await $.ajax({
 					url: ajaxConfig.ajaxurl,
 					type: 'POST',
