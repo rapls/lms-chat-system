@@ -2151,8 +2151,10 @@
 					// 🔥 SCROLL FLICKER FIX: ここで全てのDOM更新が完了している
 					// この時点でscrollHeightは確定しており、以降変更されない
 
+					// channel-switchロックを解除（blockScrollOverrideに関わらず）
+					ChannelSwitchGuard.unlock('channel-switch');
+
 					if (state.blockScrollOverride) {
-						ChannelSwitchGuard.unlock('channel-switch');
 						state.isChannelSwitching = false;
 						return;
 					}
@@ -2166,6 +2168,11 @@
 					ChannelSwitchGuard.lock('scroll-anchor', { scrollTop: targetPosition });
 
 					$messageContainer.scrollTop(targetPosition);
+
+					// スクロール完了後、即座にロックを解除
+					setTimeout(() => {
+						ChannelSwitchGuard.unlock('scroll-anchor');
+					}, 0);
 
 					state.firstLoadComplete = Date.now();
 
@@ -2215,9 +2222,22 @@
 			// 🔥 SCROLL FLICKER FIX: complementAllMessages()とcomplementSpecificMessages()を完全削除
 			// これらがスクロール後にDOM高さを変更してフリッカーを引き起こしていた
 
+			// 最終的にすべてのロックを解除
+			setTimeout(() => {
+				while (ChannelSwitchGuard.isLocked()) {
+					ChannelSwitchGuard.unlock('displayMessages-cleanup');
+				}
+			}, 100);
+
 			return true;
 		} catch (error) {
 			$('#loading-indicator, .loading-message').hide();
+
+			// エラー時もすべてのロックを解除
+			while (ChannelSwitchGuard.isLocked()) {
+				ChannelSwitchGuard.unlock('displayMessages-error-cleanup');
+			}
+
 			return false;
 		}
 	};
