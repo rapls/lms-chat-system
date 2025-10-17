@@ -804,16 +804,22 @@
 				// 既存コンテナがある場合は内容を置換
 				$existingReactions.replaceWith(reactionsHtml);
 			} else {
-				// 既存コンテナがない場合は新規作成
+			// 既存コンテナがない場合は新規作成
+			// 添付ファイルの前、またはmessage-contentの後に挿入
+			const $attachments = $message.find('.message-attachments');
+			if ($attachments.length) {
+				$attachments.before(reactionsHtml);
+			} else {
 				const $threadInfo = $message.find('.thread-info');
 				if ($threadInfo.length) {
 					$threadInfo.before(reactionsHtml);
 				} else {
 					$message.find('.message-content').after(reactionsHtml);
-				}
 			}
 		}
-		syncReactionCaches(messageId, reactions);
+	}
+}
+syncReactionCaches(messageId, reactions);
 		if (state.currentThread && String(messageId) === String(state.currentThread)) {
 			const $parentMessageReactions = $('.parent-message-reactions');
 			$parentMessageReactions.find('.reaction-item').removeClass('processing');
