@@ -15,10 +15,36 @@
 
     const ensureContainer = ($message) => {
         let $container = $message.find('.message-reactions').first();
-        if (!$container.length) {
-            $container = $('<div class="message-reactions" data-reactions-hydrated="1"></div>');
-            $message.find('.message-content').after($container);
+        const $attachments = $message.find('.message-attachments').first();
+
+        // 📌 保護されたリアクションコンテナはスキップ
+        if ($container.length && $container.attr('data-protected') === 'true') {
+            return $container;
         }
+
+        if (!$container.length) {
+            // 📌 新規作成の場合
+            $container = $('<div class="message-reactions" data-reactions-hydrated="1"></div>');
+
+            if ($attachments.length) {
+                // 📌 添付ファイルがある場合、リアクションをその後ろに配置
+                $attachments.after($container);
+            } else {
+                $message.find('.message-content').after($container);
+            }
+        } else {
+            // 📌 既存コンテナの位置チェック＆修正
+            if ($attachments.length) {
+                // 添付ファイルがある場合、リアクションコンテナがその前にあるかチェック
+                const $prev = $attachments.prev('.message-reactions');
+                if ($prev.length && $prev[0] === $container[0]) {
+                    // リアクションが添付ファイルの前にある → 後ろに移動
+                    $container.detach();
+                    $attachments.after($container);
+                }
+            }
+        }
+
         $container.attr('data-reactions-hydrated', '1');
         return $container;
     };
@@ -32,7 +58,7 @@
         }
         const grouped = {};
         reactions.forEach((reaction) => {
-            const emoji = reaction.reaction;
+            const emoji = reaction.reaction || reaction.emoji;
             if (!emoji) {
                 return;
             }
@@ -71,7 +97,7 @@
 
     const releaseUpdateLock = (key) => {
         updateLocks.delete(key);
-        
+
         // 保留中の更新があれば実行
         const pending = pendingUpdates.get(key);
         if (pending) {
@@ -83,16 +109,9 @@
     };
 
     const patchContainer = ($container, reactions) => {
-        // ドリフト防止: レイアウト測定とロック
-        const $message = $container.closest('.chat-message, .thread-message');
-        const messageElement = $message[0];
-        let beforeHeight = 0;
-        let beforeTop = 0;
-        
-        if (messageElement) {
-            const beforeRect = messageElement.getBoundingClientRect();
-            beforeHeight = beforeRect.height;
-            beforeTop = beforeRect.top;
+        // 📌 保護されたリアクションコンテナはスキップ
+        if ($container.attr('data-protected') === 'true') {
+            return;
         }
 
         const grouped = normaliseReactions(reactions);
@@ -105,60 +124,64 @@
         const seen = new Set();
         const currentUserId = window.lmsChat?.currentUserId ? parseInt(window.lmsChat.currentUserId, 10) : null;
 
+        // 🚀 DocumentFragmentで一括DOM操作（高速化）
+        const fragment = document.createDocumentFragment();
+        const itemsToRemove = [];
+        const itemsToUpdate = [];
+
         Object.values(grouped).forEach((group) => {
             seen.add(group.emoji);
             const reacted = currentUserId && Array.isArray(group.userIds) ? group.userIds.includes(currentUserId) : false;
             const usersLabel = formatUsers(group.users || []);
             let $item = existing.get(group.emoji);
             if ($item && $item.length) {
-                $item.find('.count').text(group.count);
-                $item.attr('data-users', usersLabel || '');
-                $item.toggleClass('user-reacted', reacted);
+                // 既存アイテムを更新（即座に更新、アニメーションなし）
+                itemsToUpdate.push({
+                    $item: $item,
+                    count: group.count,
+                    usersLabel: usersLabel,
+                    reacted: reacted
+                });
             } else {
-                $item = $(
-                    `<div class="reaction-item${reacted ? ' user-reacted' : ''}" data-emoji="${group.emoji}" data-users="${usersLabel || ''}">
-                        <span class="emoji">${group.emoji}</span>
-                        <span class="count">${group.count}</span>
-                    </div>`
-                );
-                // ドリフト防止: DocumentFragment使用でバッチ追加
-                const fragment = document.createDocumentFragment();
-                fragment.appendChild($item[0]);
-                $container[0].appendChild(fragment);
+                // 新規アイテムを作成（即座に表示、フェードインなし）
+                const newItem = document.createElement('div');
+                newItem.className = `reaction-item${reacted ? ' user-reacted' : ''}`;
+                newItem.setAttribute('data-emoji', group.emoji);
+                newItem.setAttribute('data-users', usersLabel || '');
+                newItem.innerHTML = `
+                    <span class="emoji">${group.emoji}</span>
+                    <span class="count">${group.count}</span>
+                `;
+                fragment.appendChild(newItem);
             }
         });
 
         existing.forEach(($item, emoji) => {
             if (!seen.has(emoji)) {
-                $item.remove();
+                itemsToRemove.push($item);
             }
         });
+
+        // 🚀 バッチ更新（リフロー最小化）
+        itemsToUpdate.forEach(update => {
+            update.$item.find('.count').text(update.count);
+            update.$item.attr('data-users', update.usersLabel || '');
+            update.$item.toggleClass('user-reacted', update.reacted);
+        });
+
+        // 🚀 バッチ削除（即座に削除）
+        itemsToRemove.forEach($item => $item.remove());
+
+        // 🚀 バッチ追加
+        if (fragment.childNodes.length > 0) {
+            $container[0].appendChild(fragment);
+        }
 
         if (!Object.keys(grouped).length) {
             $container.empty();
         }
 
         $container.attr('data-reactions-hydrated', '1');
-
-        // ドリフト検出と補正
-        if (messageElement) {
-            const afterRect = messageElement.getBoundingClientRect();
-            const heightDiff = afterRect.height - beforeHeight;
-            const topDiff = afterRect.top - beforeTop;
-
-            if (Math.abs(heightDiff) > 1 || Math.abs(topDiff) > 1) {
-                // レイアウトシフト検出時の緊急補正
-                if (window.ThreadDriftGuard && window.ThreadDriftGuard.performCorrection) {
-                    const messageId = $message.data('message-id');
-                    window.ThreadDriftGuard.performCorrection({
-                        messageId: messageId,
-                        source: 'main_reaction_ui',
-                        heightDrift: heightDiff,
-                        topDrift: topDiff
-                    });
-                }
-            }
-        }
     };
 
     const shouldSkipUpdate = (processingKey, forceUpdate) => {
@@ -198,7 +221,7 @@
         }
 
         const key = `${isThread ? 'thread' : 'main'}_${messageId}`;
-        
+
         // 既に更新中の場合、保留中の更新として登録
         if (updateLocks.get(key)) {
             pendingUpdates.set(key, { messageId, reactions, isThread, skipCache, forceUpdate });
@@ -206,7 +229,7 @@
         }
 
         await acquireUpdateLock(key);
-        
+
         try {
             const processingKey = buildProcessingKey(messageId, isThread);
             if (shouldSkipUpdate(processingKey, forceUpdate)) {
@@ -223,8 +246,14 @@
                 return;
             }
 
-            const $container = ensureContainer($message);
-            patchContainer($container, reactions || []);
+            // 📌 保護されたメッセージの場合はスキップ
+            const $container = $message.find('.message-reactions').first();
+            if ($container.length && $container.attr('data-protected') === 'true') {
+                return;
+            }
+
+            const $ensuredContainer = ensureContainer($message);
+            patchContainer($ensuredContainer, reactions || []);
 
             logDebug(
                 `update${isThread ? 'Thread' : ''}MessageReactions: messageId=${messageId}, count=${(reactions || []).length}`
@@ -239,230 +268,8 @@
     };
 
     const updateThreadMessageReactions = (messageId, reactions, skipCache = false, forceUpdate = false) => {
-        // 重複更新防止 - 100ms以内の重複を防ぐ
-        const updateKey = `thread_${messageId}`;
-        const now = Date.now();
-        
-        if (!window.LMSChat.lastReactionUpdate) {
-            window.LMSChat.lastReactionUpdate = {};
-        }
-        
-        if (window.LMSChat.lastReactionUpdate[updateKey] && 
-            (now - window.LMSChat.lastReactionUpdate[updateKey]) < 100) {
-            logDebug('Skipping duplicate thread reaction update', { messageId, timeDiff: now - window.LMSChat.lastReactionUpdate[updateKey] });
-            return;
-        }
-        
-        window.LMSChat.lastReactionUpdate[updateKey] = now;
-        
-        logDebug('updateThreadMessageReactions called', { messageId, count: reactions?.length || 0 });
-
-        // データ不完全性チェック: サーバーデータが部分的な場合の対策
-        if (reactions && reactions.length > 0) {
-            const $message = $(`.thread-message[data-message-id="${messageId}"], #thread-messages .chat-message[data-message-id="${messageId}"]`);
-            const currentReactionCount = $message.find('.reaction-item').length;
-            
-            // 現在のDOM要素数がサーバーデータより多い場合は要注意
-            if (currentReactionCount > reactions.length) {
-                logDebug('Potential incomplete server data detected', { 
-                    domCount: currentReactionCount, 
-                    serverCount: reactions.length,
-                    messageId: messageId 
-                });
-                
-                // キャッシュから完全なデータを取得を試行
-                if (window.LMSChat?.reactionCore?.getCachedReactions) {
-                    const cachedData = window.LMSChat.reactionCore.getCachedReactions(messageId, true);
-                    if (cachedData && cachedData.length >= currentReactionCount) {
-                        logDebug('Using cached complete reaction data', { messageId, cachedCount: cachedData.length });
-                        reactions = cachedData;
-                    }
-                }
-            }
-        }
-
-        // DOM要素を取得（複数のセレクタで対応）
-        const $message = $(`.thread-message[data-message-id="${messageId}"], #thread-messages .chat-message[data-message-id="${messageId}"]`);
-        if (!$message.length) {
-            logDebug('Thread message element not found', { messageId });
-            return;
-        }
-
-        // リアクションコンテナを取得または作成
-        let $container = $message.find('.message-reactions').first();
-        const hasReactions = reactions && reactions.length > 0;
-
-        if (!hasReactions) {
-            // リアクションがない場合は削除（フェードアウト）
-            if ($container.length) {
-                $container.stop(true, true).fadeOut(200, function() {
-                    $(this).remove();
-                });
-            }
-            return;
-        }
-
-        // コンテナが存在しない場合は作成
-        if (!$container.length) {
-            $container = $('<div class="message-reactions" data-reactions-hydrated="1"></div>');
-            $message.find('.message-content').after($container);
-        }
-
-        // 現在のリアクションをマップ化
-        const currentReactions = new Map();
-        $container.find('.reaction-item').each(function() {
-            const $item = $(this);
-            const emoji = $item.find('.emoji').text();
-            if (emoji) {
-                currentReactions.set(emoji, $item);
-            }
-        });
-
-        // 既存のリアクションを保持してマージ
-        const existingReactions = [];
-        $container.find('.reaction-item').each(function() {
-            const $item = $(this);
-            const emoji = $item.find('.emoji').text();
-            if (emoji) {
-                existingReactions.push({
-                    emoji: emoji,
-                    count: parseInt($item.find('.count').text()) || 1,
-                    users: [$item.hasClass('user-reacted') ? window.lmsChat?.currentUserId : null].filter(Boolean),
-                    user_ids: [$item.hasClass('user-reacted') ? parseInt(window.lmsChat?.currentUserId) : null].filter(Boolean),
-                    wasUserReacted: $item.hasClass('user-reacted')
-                });
-            }
-        });
-
-        // 新しいリアクションをグループ化（既存とマージ）
-        const groupedReactions = {};
-        
-        // まず既存のリアクションを保持
-        existingReactions.forEach(existing => {
-            groupedReactions[existing.emoji] = existing;
-        });
-        
-        // サーバーからの新しいデータでマージ・更新
-        (reactions || []).forEach(reaction => {
-            const emoji = reaction.emoji || reaction.reaction;
-            if (!emoji) return;
-            
-            // 既存データがある場合は更新、ない場合は新規追加
-            groupedReactions[emoji] = {
-                emoji: emoji,
-                count: reaction.count || (reaction.users ? reaction.users.length : 1),
-                users: reaction.users || [],
-                userIds: reaction.user_ids || [],
-                wasUserReacted: groupedReactions[emoji]?.wasUserReacted || false
-            };
-        });
-
-        // 削除すべきリアクション（慎重な削除判定）
-        currentReactions.forEach(($item, emoji) => {
-            if (!groupedReactions[emoji]) {
-                // 安全チェック: サーバーデータが不完全でない場合のみ削除
-                const shouldDelete = reactions && reactions.length > 0; // サーバーから何らかのデータが来た場合のみ削除を許可
-                
-                if (shouldDelete) {
-                    logDebug('Removing reaction not in server data', { messageId, emoji });
-                    $item.stop(true, true).fadeOut(150, function() {
-                        $(this).remove();
-                    });
-                } else {
-                    logDebug('Preserving existing reaction - server data incomplete', { messageId, emoji });
-                    // サーバーデータが空または不完全な場合は既存を保持
-                    groupedReactions[emoji] = {
-                        emoji: emoji,
-                        count: parseInt($item.find('.count').text()) || 1,
-                        users: [],
-                        userIds: [],
-                        wasUserReacted: $item.hasClass('user-reacted')
-                    };
-                }
-            }
-        });
-
-        // 追加・更新すべきリアクション
-        Object.values(groupedReactions).forEach(group => {
-            const currentUserId = window.lmsChat?.currentUserId ? parseInt(window.lmsChat.currentUserId, 10) : null;
-            
-            // user-reacted状態の正確な判定（複数ソースを考慮）
-            let isUserReacted = false;
-            if (currentUserId) {
-                // 1. サーバーデータから判定
-                if (group.userIds && group.userIds.length > 0) {
-                    isUserReacted = group.userIds.includes(currentUserId);
-                }
-                // 2. 既存DOM状態を考慮（サーバーデータが不完全な場合）
-                else if (group.wasUserReacted !== undefined) {
-                    isUserReacted = group.wasUserReacted;
-                }
-                // 3. 既存DOM要素から直接確認
-                else {
-                    const $existingItem = currentReactions.get(group.emoji);
-                    if ($existingItem) {
-                        isUserReacted = $existingItem.hasClass('user-reacted');
-                    }
-                }
-            }
-            
-            let $existingItem = currentReactions.get(group.emoji);
-            
-            if ($existingItem) {
-                // 既存アイテムの更新（ちらつき防止）
-                const $count = $existingItem.find('.count');
-                const currentCount = parseInt($count.text()) || 0;
-                
-                if (currentCount !== group.count) {
-                    // カウントが変わった場合のみ更新
-                    if (group.count > 1) {
-                        $count.text(group.count);
-                    } else {
-                        $count.text('');
-                    }
-                }
-                
-                // user-reacted クラスの更新（スムーズに）
-                if (isUserReacted && !$existingItem.hasClass('user-reacted')) {
-                    $existingItem.addClass('user-reacted');
-                } else if (!isUserReacted && $existingItem.hasClass('user-reacted')) {
-                    $existingItem.removeClass('user-reacted');
-                }
-            } else {
-                // 新しいアイテムを作成（フェードイン）
-                const $newItem = $(`
-                    <div class="reaction-item ${isUserReacted ? 'user-reacted' : ''}" data-emoji="${group.emoji}" style="display: none;">
-                        <span class="emoji">${group.emoji}</span>
-                        <span class="count">${group.count > 1 ? group.count : ''}</span>
-                    </div>
-                `);
-                
-                // 適切な位置に挿入（順序維持）
-                let inserted = false;
-                $container.find('.reaction-item').each(function() {
-                    const existingEmoji = $(this).find('.emoji').text();
-                    if (group.emoji < existingEmoji) {
-                        $newItem.insertBefore(this);
-                        inserted = true;
-                        return false;
-                    }
-                });
-                
-                if (!inserted) {
-                    $container.append($newItem);
-                }
-                
-                // フェードイン（新規追加時）
-                $newItem.fadeIn(200);
-            }
-        });
-
-        // キャッシュ更新
-        if (window.LMSChat?.reactionCore?.cacheReactionData && !skipCache) {
-            window.LMSChat.reactionCore.cacheReactionData(messageId, reactions, true);
-        }
-
-        logDebug('Thread message reactions updated successfully', { messageId, count: Object.keys(groupedReactions).length });
+        // 🚀 即座に更新（遅延なし）
+        updateMessage(messageId, reactions, true, skipCache, forceUpdate);
     };
 
     const updateParentMessageReactions = (reactions) => {
@@ -499,10 +306,60 @@
         logDebug(`updateParentMessageShadow: hasReactions=${hasReactions}`);
     };
 
+    // 📌 ページロード時に既存メッセージのリアクション位置を修正
+    const fixExistingReactionPositions = () => {
+        $('.chat-message, .thread-message').each(function() {
+            const $message = $(this);
+            const $reactions = $message.find('.message-reactions').first();
+            const $attachments = $message.find('.message-attachments').first();
+
+            // 📌 保護されたリアクションはスキップ
+            if ($reactions.length && $reactions.attr('data-protected') === 'true') {
+                return; // スキップ
+            }
+
+            if ($reactions.length && $attachments.length) {
+                // リアクションが添付ファイルの前にあるかチェック
+                const $prev = $attachments.prev('.message-reactions');
+                if ($prev.length && $prev[0] === $reactions[0]) {
+                    // リアクションが添付ファイルの前にある → 後ろに移動
+                    $reactions.detach();
+                    $attachments.after($reactions);
+                }
+            }
+        });
+    };
+
     window.LMSChat.reactionUI = {
         updateMessageReactions,
         updateThreadMessageReactions,
         updateParentMessageReactions,
         updateParentMessageShadow,
+        fixExistingReactionPositions,
     };
+
+    // ページロード時とDOMContentLoaded時に実行
+    $(document).ready(function() {
+        fixExistingReactionPositions();
+
+        // 📌 定期的に実行（MutationObserverの代わり）
+        setInterval(fixExistingReactionPositions, 1000);
+
+        // Ajaxでメッセージが追加された後も実行
+        $(document).on('messages:loaded', fixExistingReactionPositions);
+        $(document).on('thread:messages_loaded', fixExistingReactionPositions);
+        $(document).on('thread:opened', fixExistingReactionPositions);
+        $(document).on('message:sent', fixExistingReactionPositions);
+
+        // 📌 スレッド開始時にメインチャット側のリアクションを保護
+        $(document).on('lms_thread_opened', function(e, messageId) {
+            if (messageId) {
+                const $mainMessage = $(`.chat-message[data-message-id="${messageId}"]`);
+                $mainMessage.find('.message-reactions').attr('data-protected', 'true');
+
+                // リアクション位置も即座に修正
+                fixExistingReactionPositions();
+            }
+        });
+    });
 })(jQuery);

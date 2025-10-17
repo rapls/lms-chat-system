@@ -797,7 +797,6 @@
 				<div class="message-text">
 					${utils.linkifyUrls(utils.escapeHtml(message.message))}
 				</div>
-				${attachmentsHtml}
 				<div class="message-actions">
 					<button class="action-button add-reaction" aria-label="リアクションを追加">
 						<img src="${utils.getAssetPath(
@@ -817,6 +816,7 @@
 					}
 				</div>
 			</div>
+			${attachmentsHtml}
 			${reactionsHtml}
 		</div>`;
 	};
@@ -877,10 +877,10 @@
 				}
 			});
 			// スレッド状態を即座に更新
-			state.currentThread = messageId;
-			state.lastThreadMessageId = 0;
-			lastMessageId = 0;
-			state.unreadThreadMessages = [];
+		state.currentThread = messageId;
+		state.lastThreadMessageId = 0;
+		lastMessageId = 0;
+		state.unreadThreadMessages = [];
 
 			// スレッドパネルを即座に表示
 			const $threadPanel = $('.thread-panel');
@@ -901,6 +901,36 @@
 
 			const $parentMessage = $(`.chat-message[data-message-id="${messageId}"]`);
 			if ($parentMessage.length) {
+				// 📌 スレッド開始時の最初にリアクションと添付ファイルをクローン（消える前に保存）
+				const $reactionsContainer = $parentMessage.find('.message-reactions').first();
+				const $attachmentsContainer = $parentMessage.find('.message-attachments').first();
+				
+				// stateに保存（updateThreadInfo関数で使用）
+				if (!window.LMSChat.state.threadParentCache) {
+					window.LMSChat.state.threadParentCache = new Map();
+				}
+				
+				const parentCache = {
+					reactionsHtml: '',
+					attachmentsHtml: ''
+				};
+				
+				if ($reactionsContainer.length > 0) {
+					const $reactionsClone = $reactionsContainer.clone();
+					$reactionsClone.removeAttr('data-protected');
+					parentCache.reactionsHtml = $reactionsClone.prop('outerHTML') || '';
+				}
+				
+				if ($attachmentsContainer.length > 0) {
+					const $attachmentsClone = $attachmentsContainer.clone();
+					parentCache.attachmentsHtml = $attachmentsClone.prop('outerHTML') || '';
+				}
+				
+				window.LMSChat.state.threadParentCache.set(messageId, parentCache);
+				
+				// 📌 スレッド開始時に即座にメインチャットのリアクションを保護
+				$parentMessage.find('.message-reactions').attr('data-protected', 'true');
+				
 				$parentMessage.find('.message-content .unread-badge.thread-force-badge').remove();
 				$parentMessage
 					.find('.parent-message-reactions .unread-badge.thread-force-badge')
@@ -1000,77 +1030,6 @@
 					state.unreadThreadMessages = readStatusResponse.data.unread_messages || [];
 				}
 			} catch (error) {}
-			let messageTimestamp = $message.data('timestamp');
-			const parentMessage = {
-				id: messageId,
-				display_name: $message.find('.user-name').text().trim(),
-				message: $message.find('.message-text').html(),
-				formatted_time: messageTimestamp
-					? formatMessageTime(messageTimestamp)
-					: $message.find('.message-time').text().trim(),
-				reactions: $message.find('.message-reactions').html() || '',
-				isCurrentUser: $message.hasClass('current-user'),
-				attachments: $message.find('.message-attachments').html() || '',
-			};
-			const parentReactions = $message.find('.message-reactions').html() || '';
-			$('.parent-message')
-				.attr('data-message-id', messageId)
-				.addClass(parentMessage.isCurrentUser ? 'current-user' : '').html(`
-				<div class="parent-message-header">
-					<div class="message-header-left">
-						<span class="message-time">${parentMessage.formatted_time}</span>
-						<span class="user-name ${parentMessage.isCurrentUser ? 'current-user-name' : ''}">
-							${utils.escapeHtml(parentMessage.display_name)}
-						</span>
-					</div>
-					<div class="header-actions">
-						<div class="message-actions">
-							<button class="action-button add-reaction" aria-label="リアクションを追加" data-message-id="${messageId}">
-								<img src="${utils.getAssetPath(
-									'wp-content/themes/lms/img/icon-emoji.svg'
-								)}" alt="絵文字" width="20" height="20">
-							</button>
-							${
-								parentMessage.isCurrentUser
-									? `
-							<button class="action-button delete-parent-message" aria-label="メッセージを削除" data-message-id="${messageId}">
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"></path>
-								</svg>
-							</button>
-							`
-									: ''
-							}
-						</div>
-						<div class="close-thread-btn" title="スレッドを閉じる">&times;</div>
-					</div>
-				</div>
-				<div class="parent-message-body">
-					<div class="message-content">
-						<div class="message-text">${parentMessage.message}</div>
-						${parentMessage.attachments}
-					</div>
-				</div>
-			`);
-			if (parentReactions) {
-				$('.parent-message-reactions').remove();
-				$(
-					'<div class="parent-message-reactions" data-message-id="' +
-						messageId +
-						'">' +
-						parentReactions +
-						'</div>'
-				).insertAfter('.parent-message');
-			} else {
-				$('.parent-message-reactions').remove();
-			}
-			// リアクション更新を即座に実行
-			if (
-				window.LMSChat.reactionActions &&
-				window.LMSChat.reactionActions.refreshParentMessageReactions
-			) {
-				window.LMSChat.reactionActions.refreshParentMessageReactions(messageId, true);
-			}
 			const $parentMessageBody = $('.parent-message-body');
 			if ($parentMessageBody.length) {
 				$parentMessageBody.removeClass('scrollable scrolling');
@@ -1173,6 +1132,42 @@
 			const currentUserId = Number(window.lmsChat.currentUserId);
 			const messageUserId = Number(parentMessage.user_id);
 			const isCurrentUser = currentUserId === messageUserId;
+			
+			// 📌 openThread関数で保存されたリアクションと添付ファイルのHTMLを取得
+			let reactionsHtml = '';
+			let attachmentsHtml = '';
+			
+			// stateから取得（openThread関数で保存されたもの）
+			if (window.LMSChat.state.threadParentCache && 
+			    window.LMSChat.state.threadParentCache.has(parentMessage.id)) {
+				const cachedParent = window.LMSChat.state.threadParentCache.get(parentMessage.id);
+				reactionsHtml = cachedParent.reactionsHtml || '';
+				attachmentsHtml = cachedParent.attachmentsHtml || '';
+			} else {
+				// フォールバック: stateに無い場合はメインチャットから直接クローン
+				const $mainMessage = $(`.chat-message[data-message-id="${parentMessage.id}"]`);
+				
+				if ($mainMessage.length > 0) {
+					// 📌 メインチャット側のリアクションを保護
+					$mainMessage.find('.message-reactions').attr('data-protected', 'true');
+
+					// リアクションコンテナ全体をクローン
+					const $reactionsContainer = $mainMessage.find('.message-reactions').first();
+					if ($reactionsContainer.length > 0) {
+						const $clone = $reactionsContainer.clone();
+						$clone.removeAttr('data-protected');
+						reactionsHtml = $clone.prop('outerHTML') || '';
+					}
+
+					// 添付ファイルをクローン
+					const $attachmentsContainer = $mainMessage.find('.message-attachments').first();
+					if ($attachmentsContainer.length > 0) {
+						const $attachmentsClone = $attachmentsContainer.clone();
+						attachmentsHtml = $attachmentsClone.prop('outerHTML') || '';
+					}
+				}
+			}
+			
 			const parentHtml = `
 				<div class="parent-message-header">
 					<div class="message-header-left">
@@ -1210,11 +1205,13 @@
 						<div class="message-text">${utils.linkifyUrls(utils.escapeHtml(parentMessage.message))}</div>
 					</div>
 				</div>
+			${attachmentsHtml || ''}
+			${reactionsHtml || ''}
 			`;
 			$threadParent
 				.removeClass('current-user no-reactions')
 				.addClass(isCurrentUser ? 'current-user' : '')
-				.addClass('no-reactions')
+				.addClass(reactionsHtml ? '' : 'no-reactions')
 				.html(parentHtml);
 		} catch (error) {}
 	};
@@ -2103,6 +2100,17 @@
 		}
 		const parentMessageId = state.currentThread;
 		const $threadPanel = $('.thread-panel');
+
+		// 📌 メインチャット側のリアクション保護を解除とキャッシュクリーンアップ
+		if (parentMessageId) {
+			const $mainMessage = $(`.chat-message[data-message-id="${parentMessageId}"]`);
+			$mainMessage.find('.message-reactions').removeAttr('data-protected');
+			
+			// 親メッセージのキャッシュをクリーンアップ
+			if (window.LMSChat.state.threadParentCache) {
+				window.LMSChat.state.threadParentCache.delete(parentMessageId);
+			}
+		}
 
 		// 状態を即座にリセット（重複開くのを防ぐため）
 		state.currentThread = null;

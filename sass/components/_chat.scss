@@ -2277,13 +2277,13 @@
 .attachment-item {
 	display: inline-flex;
 	align-items: center;
-	gap: 10px;                   // 8px → 10px（少し広く）
-	padding: 10px 14px;          // 8px 12px → 10px 14px（少し大きく）
+	gap: 10px; // 8px → 10px（少し広く）
+	padding: 10px 14px; // 8px 12px → 10px 14px（少し大きく）
 	background: white;
 	border: 1.5px solid #cbd5e1;
-	border-radius: 22px;         // 20px → 22px（少し丸く）
+	border-radius: 22px; // 20px → 22px（少し丸く）
 	margin: 6px 8px 6px 0;
-	max-width: 300px;            // 280px → 300px（少し広く）
+	max-width: 300px; // 280px → 300px（少し広く）
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 	transition: all 0.2s ease;
 
@@ -2294,27 +2294,27 @@
 	}
 
 	.attachment-preview {
-		width: 40px;             // 32px → 40px（少し大きく）
-		height: 40px;            // 32px → 40px（少し大きく）
+		width: 40px; // 32px → 40px（少し大きく）
+		height: 40px; // 32px → 40px（少し大きく）
 		flex-shrink: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		background: #f1f5f9;
-		border-radius: 8px;      // 6px → 8px（少し丸く）
+		border-radius: 8px; // 6px → 8px（少し丸く）
 		position: relative;
 
 		img {
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			border-radius: 8px;  // 6px → 8px（少し丸く）
+			border-radius: 8px; // 6px → 8px（少し丸く）
 			display: block;
 		}
 
 		.file-icon {
-			width: 24px;         // 20px → 24px（少し大きく）
-			height: 24px;        // 20px → 24px（少し大きく）
+			width: 24px; // 20px → 24px（少し大きく）
+			height: 24px; // 20px → 24px（少し大きく）
 			object-fit: contain;
 		}
 	}
@@ -2329,15 +2329,15 @@
 		align-items: center;
 		justify-content: center;
 		background: rgba(0, 0, 0, 0.6);
-		border-radius: 8px;      // 6px → 8px
+		border-radius: 8px; // 6px → 8px
 		opacity: 0;
 		transition: opacity 0.2s ease;
 		cursor: pointer;
 		text-decoration: none;
 
 		img {
-			width: 18px;         // 16px → 18px（少し大きく）
-			height: 18px;        // 16px → 18px（少し大きく）
+			width: 18px; // 16px → 18px（少し大きく）
+			height: 18px; // 16px → 18px（少し大きく）
 			filter: brightness(0) invert(1);
 		}
 
@@ -4995,6 +4995,19 @@ img.file-icon {
 }
 
 .thread-panel {
+	// 📌 親メッセージのリアクションと添付ファイルの背景を白に
+	.parent-message {
+		.message-reactions {
+			background-color: white;
+			padding: 8px 12px;
+		}
+
+		.message-attachments {
+			background-color: white;
+			padding: 0 12px;
+		}
+	}
+
 	.parent-message-body {
 		// スクロールインジケーター - 右下に配置
 		&::before {
@@ -6087,6 +6100,201 @@ body.thread-open {
 
 			p {
 				color: #a0a0a0;
+			}
+		}
+	}
+}
+
+// ============================================================
+// メディアプレビュー・再生モーダル
+// ============================================================
+
+// プレビュー可能な添付ファイルにホバーエフェクト
+.previewable-attachment {
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		.attachment-preview {
+			img:not(.file-icon) {
+				transform: scale(1.05);
+			}
+		}
+
+		.attachment-info {
+			background: #f5f7fa;
+		}
+	}
+}
+
+// モーダルオーバーレイとコンテナ
+.media-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	.media-modal-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: blur(4px);
+	}
+
+	.media-modal-container {
+		position: relative;
+		background: white;
+		border-radius: 12px;
+		max-width: 90vw;
+		max-height: 90vh;
+		width: 800px;
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.media-modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px 20px;
+		border-bottom: 1px solid #e5e7eb;
+		background: #f9fafb;
+
+		.media-modal-title {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 600;
+			color: #1f2937;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 600px;
+		}
+
+		.media-modal-close {
+			background: none;
+			border: none;
+			font-size: 28px;
+			line-height: 1;
+			color: #6b7280;
+			cursor: pointer;
+			padding: 0;
+			width: 32px;
+			height: 32px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 6px;
+			transition: all 0.2s ease;
+			flex-shrink: 0;
+
+			&:hover {
+				background: #e5e7eb;
+				color: #1f2937;
+			}
+		}
+	}
+
+	.media-preview-content {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 24px;
+		overflow: auto;
+		background: #f9fafb;
+
+		// 画像プレビュー
+		.media-preview-image {
+			max-width: 100%;
+			max-height: calc(90vh - 120px);
+			object-fit: contain;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+
+		// 動画プレビュー
+		.media-preview-video {
+			max-width: 100%;
+			max-height: calc(90vh - 120px);
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		}
+
+		// 音声プレーヤー
+		.audio-player-container {
+			width: 100%;
+			max-width: 500px;
+			padding: 32px;
+			background: white;
+			border-radius: 12px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+			.audio-player-title {
+				font-size: 16px;
+				font-weight: 600;
+				color: #1f2937;
+				margin-bottom: 20px;
+				text-align: center;
+				word-break: break-all;
+			}
+
+			.media-preview-audio {
+				width: 100%;
+				outline: none;
+
+				&:focus {
+					outline: 2px solid #3b82f6;
+					outline-offset: 2px;
+					border-radius: 4px;
+				}
+			}
+		}
+	}
+}
+
+// bodyにモーダル表示中クラスが付与されたときのスクロール制御
+body.media-modal-open {
+	overflow: hidden;
+}
+
+// モバイル対応
+@media (max-width: 768px) {
+	.media-modal {
+		.media-modal-container {
+			width: 95vw;
+			max-height: 95vh;
+		}
+
+		.media-preview-content {
+			padding: 16px;
+
+			.media-preview-image,
+			.media-preview-video {
+				max-height: calc(95vh - 100px);
+			}
+
+			.audio-player-container {
+				padding: 24px 16px;
+			}
+		}
+
+		.media-modal-header {
+			padding: 12px 16px;
+
+			.media-modal-title {
+				font-size: 14px;
+				max-width: calc(95vw - 100px);
 			}
 		}
 	}

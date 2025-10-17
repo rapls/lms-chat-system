@@ -2455,6 +2455,14 @@ function lms_enqueue_chat_assets()
 			true
 		);
 
+		wp_enqueue_script(
+			'lms-media-preview',
+			get_template_directory_uri() . '/js/media-preview.js',
+			array('jquery'),
+			lms_get_asset_version('/js/media-preview.js'),
+			true
+		);
+
 		// 旧バージョンは無効化
 		// 	'lms-message-receive-fix',
 		// );

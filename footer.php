@@ -33,6 +33,18 @@
 </footer>
 </div><!-- #page -->
 
+<!-- メディアプレビュー・再生モーダル -->
+<div id="media-preview-modal" class="media-modal" style="display: none;">
+	<div class="media-modal-overlay"></div>
+	<div class="media-modal-container">
+		<div class="media-modal-header">
+			<h3 class="media-modal-title">メディアプレビュー</h3>
+			<button class="media-modal-close" aria-label="閉じる">&times;</button>
+		</div>
+		<div class="media-preview-content"></div>
+	</div>
+</div>
+
 <?php wp_footer(); ?>
 
 </body>

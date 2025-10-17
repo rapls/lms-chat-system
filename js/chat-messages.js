@@ -1229,12 +1229,32 @@
 		const fileType = file.mime_type || file.file_type || '';
 		const fileSize = file.file_size || file.size || 0;
 		const fileUrl = getFileUrl(file);
+
+		// ファイルタイプを判定
 		const isImage =
 			fileType &&
 			(fileType.startsWith('image/') ||
-				['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(
+				['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'].includes(
 					fileName.split('.').pop().toLowerCase()
 				));
+		const isVideo =
+			fileType &&
+			(fileType.startsWith('video/') ||
+				['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(
+					fileName.split('.').pop().toLowerCase()
+				));
+		const isAudio =
+			fileType &&
+			(fileType.startsWith('audio/') ||
+				['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac'].includes(
+					fileName.split('.').pop().toLowerCase()
+				));
+
+		// プレビュー可能なファイルかどうか
+		const isPreviewable = isImage || isVideo || isAudio;
+		const previewClass = isPreviewable ? ' previewable-attachment' : '';
+		const mediaType = isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'file';
+
 		let thumbnailUrl = '';
 		if (isImage) {
 			if (file.thumbnail) {
@@ -1251,7 +1271,11 @@
 					fileType || '不明なファイル形式'
 			  }">`;
 		return `
-			<div class="attachment-item">
+			<div class="attachment-item${previewClass}"
+			     data-file-url="${utils.escapeHtml(fileUrl)}"
+			     data-file-type="${utils.escapeHtml(fileType)}"
+			     data-file-name="${utils.escapeHtml(fileName)}"
+			     data-media-type="${mediaType}">
 				<div class="attachment-preview">
 					${previewHtml}
 					<a href="${fileUrl}" class="attachment-download" download="${utils.escapeHtml(
