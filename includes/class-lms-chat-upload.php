@@ -270,7 +270,8 @@ class LMS_Chat_Upload
 
 		$new_image = imagecreatetruecolor($new_width, $new_height);
 
-		if ($mime_type === 'image/png') {
+		// PNG, WebP, AVIFは透明度をサポート
+		if (in_array($mime_type, ['image/png', 'image/webp', 'image/avif'])) {
 			imagealphablending($new_image, false);
 			imagesavealpha($new_image, true);
 			$transparent = imagecolorallocatealpha($new_image, 255, 255, 255, 127);
@@ -286,6 +287,20 @@ class LMS_Chat_Upload
 				break;
 			case 'image/gif':
 				$source = imagecreatefromgif($source_path);
+				break;
+			case 'image/webp':
+				if (function_exists('imagecreatefromwebp')) {
+					$source = imagecreatefromwebp($source_path);
+				} else {
+					return false;
+				}
+				break;
+			case 'image/avif':
+				if (function_exists('imagecreatefromavif')) {
+					$source = imagecreatefromavif($source_path);
+				} else {
+					return false;
+				}
 				break;
 			default:
 				return false;
