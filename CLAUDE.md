@@ -1782,3 +1782,350 @@ $(document).on('message:sent', function() {
 
 最終更新: 2025-10-17
 作成者: Claude (スレッドファイルアップロード修正版)
+
+## メディアプレビュー・再生機能とリアクション表示修正（2025-10-18実施）
+
+### 実装概要
+
+画像・動画・音声ファイルのモーダルプレビュー・再生機能を実装し、リアクションと添付ファイルの表示順序を修正しました。スレッド親メッセージ表示の重複コード削除も実施しました。
+
+### 実装内容
+
+#### 1. **メディアプレビュー・再生機能** (新規実装)
+
+**対応ファイルフォーマット:**
+- 画像: jpg, jpeg, png, gif, webp, svg, avif
+- 動画: mp4, webm, ogg, mov, avi, mkv
+- 音声: mp3, wav, ogg, aac, m4a, flac
+
+**実装ファイル:**
+
+##### media-preview.js (新規作成 - 181行)
+
+```javascript
+window.LMSMediaPreview = {
+    currentMedia: null,
+
+    setupEventListeners: function () {
+        // 添付ファイルのクリックイベント（イベント委譲）
+        $(document).on('click', '.previewable-attachment', this.handleAttachmentClick.bind(this));
+        // ダウンロードボタンのクリックは通常のダウンロード動作
+        $(document).on('click', '.attachment-download', function (e) {
+            e.stopPropagation();
+        });
+        // モーダルを閉じる
+        $(document).on('click', '.media-modal-close, .media-modal-overlay', this.closeModal.bind(this));
+        // ESCキーでモーダルを閉じる
+        $(document).on('keydown', this.handleKeydown.bind(this));
+    },
+
+    showImagePreview: function (url, fileName) { /* ... */ },
+    showVideoPreview: function (url, fileName) { /* ... 自動再生 */ },
+    showAudioPlayer: function (url, fileName) { /* ... 自動再生 */ },
+}
+```
+
+**機能:**
+- 画像: クリックでフルサイズプレビュー表示
+- 動画: クリックで再生モーダル表示（自動再生）
+- 音声: クリックで再生モーダル表示（自動再生）
+- ESCキー、オーバーレイクリック、×ボタンでモーダルを閉じる
+- モーダル閉じる際にメディア自動停止
+
+##### chat-messages.js - createAttachmentHtml修正
+
+```javascript
+const createAttachmentHtml = (file) => {
+    // ファイルタイプを判定
+    const isImage = /* ... jpg, jpeg, png, gif, webp, svg, avif */;
+    const isVideo = /* ... mp4, webm, ogg, mov, avi, mkv */;
+    const isAudio = /* ... mp3, wav, ogg, aac, m4a, flac */;
+
+    const isPreviewable = isImage || isVideo || isAudio;
+    const previewClass = isPreviewable ? ' previewable-attachment' : '';
+    const mediaType = isImage ? 'image' : isVideo ? 'video' : isAudio ? 'audio' : 'file';
+
+    return `
+        <div class="attachment-item${previewClass}"
+             data-file-url="${utils.escapeHtml(fileUrl)}"
+             data-file-type="${utils.escapeHtml(fileType)}"
+             data-file-name="${utils.escapeHtml(fileName)}"
+             data-media-type="${mediaType}">
+            <!-- ... -->
+        </div>
+    `;
+};
+```
+
+##### footer.php - モーダルHTML追加
+
+```html
+<!-- メディアプレビュー・再生モーダル -->
+<div id="media-preview-modal" class="media-modal" style="display: none;">
+    <div class="media-modal-overlay"></div>
+    <div class="media-modal-container">
+        <div class="media-modal-header">
+            <h3 class="media-modal-title">メディアプレビュー</h3>
+            <button class="media-modal-close" aria-label="閉じる">&times;</button>
+        </div>
+        <div class="media-preview-content"></div>
+    </div>
+</div>
+```
+
+##### sass/components/_chat.scss - モーダルスタイル追加（+195行）
+
+```scss
+// プレビュー可能な添付ファイルにホバーエフェクト
+.previewable-attachment {
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        .attachment-preview {
+            img:not(.file-icon) {
+                transform: scale(1.05);
+            }
+        }
+    }
+}
+
+// モーダルオーバーレイとコンテナ
+.media-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .media-modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(4px);
+    }
+
+    .media-modal-container {
+        position: relative;
+        background: white;
+        border-radius: 12px;
+        max-width: 90vw;
+        max-height: 90vh;
+        width: 800px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        /* ... */
+    }
+
+    .media-preview-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        overflow: auto;
+        background: #f9fafb;
+
+        // 画像プレビュー
+        .media-preview-image {
+            max-width: 100%;
+            max-height: calc(90vh - 120px);
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        // 動画プレビュー
+        .media-preview-video {
+            max-width: 100%;
+            max-height: calc(90vh - 120px);
+            border-radius: 8px;
+        }
+
+        // 音声プレーヤー
+        .audio-player-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 32px;
+            background: white;
+            border-radius: 12px;
+            /* ... */
+        }
+    }
+}
+
+// bodyにモーダル表示中クラスが付与されたときのスクロール制御
+body.media-modal-open {
+    overflow: hidden;
+}
+
+// モバイル対応
+@media (max-width: 768px) {
+    .media-modal {
+        .media-modal-container {
+            width: 95vw;
+            max-height: 95vh;
+        }
+        /* ... */
+    }
+}
+```
+
+##### functions.php - JavaScript enqueue
+
+```php
+wp_enqueue_script(
+    'lms-media-preview',
+    get_template_directory_uri() . '/js/media-preview.js',
+    array('jquery'),
+    lms_get_asset_version('/js/media-preview.js'),
+    true
+);
+```
+
+#### 2. **リアクションと添付ファイルの表示順序修正**
+
+**修正前:** リアクション → 添付ファイル
+**修正後:** 添付ファイル → リアクション
+
+##### chat-reactions-ui.js - ensureContainer修正
+
+```javascript
+const ensureContainer = ($message) => {
+    let $container = $message.find('.message-reactions').first();
+    const $attachments = $message.find('.message-attachments').first();
+
+    if (!$container.length) {
+        $container = $('<div class="message-reactions" data-reactions-hydrated="1"></div>');
+
+        if ($attachments.length) {
+            // 📌 添付ファイルがある場合、リアクションをその後ろに配置
+            $attachments.after($container);
+        } else {
+            $message.find('.message-content').after($container);
+        }
+    } else {
+        // 📌 既存コンテナの位置チェック＆修正
+        if ($attachments.length) {
+            const $prev = $attachments.prev('.message-reactions');
+            if ($prev.length && $prev[0] === $container[0]) {
+                // リアクションが添付ファイルの前にある → 後ろに移動
+                $container.detach();
+                $attachments.after($container);
+            }
+        }
+    }
+
+    return $container;
+};
+```
+
+##### fixExistingReactionPositions関数追加
+
+```javascript
+// 📌 ページロード時に既存メッセージのリアクション位置を修正
+const fixExistingReactionPositions = () => {
+    $('.chat-message, .thread-message').each(function() {
+        const $message = $(this);
+        const $reactions = $message.find('.message-reactions').first();
+        const $attachments = $message.find('.message-attachments').first();
+
+        // 📌 保護されたリアクションはスキップ
+        if ($reactions.length && $reactions.attr('data-protected') === 'true') {
+            return;
+        }
+
+        if ($reactions.length && $attachments.length) {
+            const $prev = $attachments.prev('.message-reactions');
+            if ($prev.length && $prev[0] === $reactions[0]) {
+                // リアクションが添付ファイルの前にある → 後ろに移動
+                $reactions.detach();
+                $attachments.after($reactions);
+            }
+        }
+    });
+};
+
+$(document).ready(function() {
+    fixExistingReactionPositions();
+
+    // 📌 定期的に実行（MutationObserverの代わり）
+    setInterval(fixExistingReactionPositions, 1000);
+
+    // Ajaxでメッセージが追加された後も実行
+    $(document).on('messages:loaded', fixExistingReactionPositions);
+    $(document).on('thread:messages_loaded', fixExistingReactionPositions);
+    $(document).on('thread:opened', fixExistingReactionPositions);
+    $(document).on('message:sent', fixExistingReactionPositions);
+});
+```
+
+#### 3. **スレッド親メッセージ表示の重複コード削除**
+
+##### chat-threads.js - openThread関数修正
+
+**削除したコード:** 1034-1088行目（約56行の重複コード）
+
+**問題:**
+- `openThread`関数内で追加した親メッセージ表示コードが、既存の`updateThreadInfo`関数（1175-1273行目）と完全に重複
+- 2回レンダリングされることで、2回目のレンダリング時にリアクションと添付ファイルが既に消えていたため表示されなかった
+
+**修正後の処理フロー:**
+1. **openThread関数（902-933行目）**: リアクションと添付ファイルをクローンして`window.LMSChat.state.threadParentCache`に保存
+2. **loadThreadMessages関数（1513行目）**: サーバーから親メッセージデータ取得後、`updateThreadInfo(parentMessage)`を呼び出し
+3. **updateThreadInfo関数（1175-1273行目）**: stateから保存されたHTMLを取得して親メッセージを表示
+
+### 技術的特徴
+
+**メディアプレビュー:**
+- イベント委譲による効率的なイベント処理
+- ダウンロードボタンのクリックイベント伝播を防止
+- ESCキー、オーバーレイクリック、×ボタンでモーダルを閉じる
+- `backdrop-filter: blur(4px)`でモダンなオーバーレイ
+- レスポンシブ対応（モバイルは95vw）
+- モーダル表示中は背景スクロール禁止（`body.media-modal-open`）
+
+**リアクション表示位置:**
+- DOMの位置を動的にチェック＆修正
+- `data-protected="true"`属性で保護されたリアクションはスキップ
+- MutationObserverの代わりに定期実行（1秒間隔）
+- イベント駆動でメッセージ追加時に自動修正
+
+**スレッド親メッセージ:**
+- 重複コード削除により、約56行のコード削減
+- 単一責任の原則に準拠（`updateThreadInfo`関数に統合）
+- 早期キャッシングによりリアクション・添付ファイルの保護を実現
+
+### 構文チェック結果
+
+✅ **JavaScript**: `media-preview.js`, `chat-messages.js`, `chat-reactions-ui.js`, `chat-threads.js` - エラーなし
+✅ **PHP**: `footer.php`, `functions.php` - エラーなし
+✅ **SCSS**: コンパイル成功 → `style.css` 生成完了（6302行）
+
+### Gitコミット履歴
+
+**コミット 02af110** (2025-10-18)
+- メディアプレビュー・再生機能実装
+- リアクションと添付ファイルの表示順序修正
+- スレッド親メッセージ表示の重複コード削除
+- 変更ファイル: 9ファイル（+667行, -369行）
+
+### 使用方法
+
+1. **メディアプレビュー**: 画像・動画・音声ファイル（ダウンロードボタン以外）をクリック
+2. **モーダル表示**: プレビュー・再生モーダルが開く（動画・音声は自動再生）
+3. **モーダルを閉じる**:
+   - ×ボタンをクリック
+   - オーバーレイをクリック
+   - ESCキーを押す
+4. **リアクション表示**: 添付ファイルの後にリアクションが表示される（正しい順序）
+
+---
+
+最終更新: 2025-10-18
+作成者: Claude (メディアプレビュー・リアクション表示修正版)
