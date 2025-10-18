@@ -899,36 +899,69 @@
 			$(document).trigger('thread_panel_opened', [messageId]);
 			setupThreadEventListeners();
 
+			// 📌 非同期でリアクション・添付ファイルをクローン（Long Polling受信メッセージ対応）
+			const cloneParentMessageContent = async (messageId, maxRetries = 10, retryDelay = 50) => {
+				const $parentMessage = $(`.chat-message[data-message-id="${messageId}"]`);
+				if (!$parentMessage.length) {
+					return null;
+				}
+
+				let attempt = 0;
+				while (attempt < maxRetries) {
+					const $reactionsContainer = $parentMessage.find('.message-reactions').first();
+					const $attachmentsContainer = $parentMessage.find('.message-attachments').first();
+
+					// リアクションまたは添付ファイルが存在する場合、またはdata-reactions-hydratedが設定されている場合
+					const hasReactions = $reactionsContainer.length > 0;
+					const hasAttachments = $attachmentsContainer.length > 0;
+					const isHydrated = $parentMessage.find('[data-reactions-hydrated]').length > 0;
+
+					// リアクション・添付ファイルのロード完了を確認
+					if (hasReactions || hasAttachments || isHydrated || attempt >= maxRetries - 1) {
+						const parentCache = {
+							reactionsHtml: '',
+							attachmentsHtml: ''
+						};
+
+						if (hasReactions) {
+							const $reactionsClone = $reactionsContainer.clone();
+							$reactionsClone.removeAttr('data-protected');
+							parentCache.reactionsHtml = $reactionsClone.prop('outerHTML') || '';
+						}
+
+						if (hasAttachments) {
+							const $attachmentsClone = $attachmentsContainer.clone();
+							parentCache.attachmentsHtml = $attachmentsClone.prop('outerHTML') || '';
+						}
+
+						// stateに保存
+						if (!window.LMSChat.state.threadParentCache) {
+							window.LMSChat.state.threadParentCache = new Map();
+						}
+						window.LMSChat.state.threadParentCache.set(messageId, parentCache);
+
+						// メインチャットのリアクションを保護
+						$parentMessage.find('.message-reactions').attr('data-protected', 'true');
+
+						return parentCache;
+					}
+
+					// 次の試行まで待機
+					await new Promise(resolve => setTimeout(resolve, retryDelay));
+					attempt++;
+				}
+
+				return null;
+			};
+
+			// 非同期でクローン処理を実行（awaitせずにバックグラウンドで実行）
+			cloneParentMessageContent(messageId).catch(() => {
+				// エラーは無視（サーバーから取得したデータで補完）
+			});
+
 			const $parentMessage = $(`.chat-message[data-message-id="${messageId}"]`);
 			if ($parentMessage.length) {
-				// 📌 スレッド開始時の最初にリアクションと添付ファイルをクローン（消える前に保存）
-				const $reactionsContainer = $parentMessage.find('.message-reactions').first();
-				const $attachmentsContainer = $parentMessage.find('.message-attachments').first();
-				
-				// stateに保存（updateThreadInfo関数で使用）
-				if (!window.LMSChat.state.threadParentCache) {
-					window.LMSChat.state.threadParentCache = new Map();
-				}
-				
-				const parentCache = {
-					reactionsHtml: '',
-					attachmentsHtml: ''
-				};
-				
-				if ($reactionsContainer.length > 0) {
-					const $reactionsClone = $reactionsContainer.clone();
-					$reactionsClone.removeAttr('data-protected');
-					parentCache.reactionsHtml = $reactionsClone.prop('outerHTML') || '';
-				}
-				
-				if ($attachmentsContainer.length > 0) {
-					const $attachmentsClone = $attachmentsContainer.clone();
-					parentCache.attachmentsHtml = $attachmentsClone.prop('outerHTML') || '';
-				}
-				
-				window.LMSChat.state.threadParentCache.set(messageId, parentCache);
-				
-				// 📌 スレッド開始時に即座にメインチャットのリアクションを保護
+				// 📌 即座にメインチャットのリアクションを保護（クローン完了を待たずに）
 				$parentMessage.find('.message-reactions').attr('data-protected', 'true');
 				
 				$parentMessage.find('.message-content .unread-badge.thread-force-badge').remove();
